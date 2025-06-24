@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import Callable
 from xml.etree.ElementTree import tostring, Element
 from .i18n import I18N
-from .template import Template
+from .context import Template
 
 
 @dataclass

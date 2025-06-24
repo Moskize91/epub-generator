@@ -6,12 +6,12 @@ from typing import Literal
 from uuid import uuid4
 from zipfile import ZipFile
 from xml.etree.ElementTree import fromstring, Element
+
 from .types import TableRender, LaTeXRender
 from .gen_part import generate_part
 from .gen_index import gen_index, NavPoint
 from .i18n import I18N
-from .template import Template
-from .context import Context
+from .context import Context, Template
 
 
 def generate_epub_file(

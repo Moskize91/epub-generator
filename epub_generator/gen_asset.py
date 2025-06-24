@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 
 from xml.etree.ElementTree import fromstring, Element
 from latex2mathml.converter import convert
-from ..utils import sha256_hash
+from .hash import sha256_hash
 from .types import LaTeXRender
 from .context import Context
 

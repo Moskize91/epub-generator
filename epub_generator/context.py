@@ -1,5 +1,9 @@
 from pathlib import Path
 from zipfile import ZipFile
+from importlib.resources import files
+from jinja2 import Environment, Template as JinjaTemplate
+
+from .template import create_env
 from .types import TableRender, LaTeXRender
 
 
@@ -45,11 +49,11 @@ class Context:
 
   @property
   def used_files(self) -> list[tuple[str, str]]:
-    files: list[tuple[str, str]] = []
+    used_files: list[tuple[str, str]] = []
     for file_name in sorted(list(self._used_file_names.keys())):
       media_type = self._used_file_names[file_name]
-      files.append((file_name, media_type))
-    return files
+      used_files.append((file_name, media_type))
+    return used_files
 
   def add_used_asset_files(self) -> None:
     if self._assets_path is None:
@@ -61,3 +65,20 @@ class Context:
         filename=file,
         arcname="OEBPS/assets/" + file.name,
       )
+
+class Template:
+  def __init__(self):
+    templates_path = files("pdf_craft") / "data" / "templates"
+    self._env: Environment = create_env(templates_path)
+    self._templates: dict[str, JinjaTemplate] = {}
+
+  def render(self, template: str, **params) -> str:
+    template: JinjaTemplate = self._template(template)
+    return template.render(**params)
+
+  def _template(self, name: str) -> JinjaTemplate:
+    template: JinjaTemplate = self._templates.get(name, None)
+    if template is None:
+      template = self._env.get_template(name)
+      self._templates[name] = template
+    return template

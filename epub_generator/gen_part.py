@@ -2,8 +2,7 @@ from typing import Generator
 from xml.etree.ElementTree import tostring, Element
 
 from .i18n import I18N
-from .template import Template
-from .context import Context
+from .context import Context, Template
 from .gen_asset import try_gen_table, try_gen_formula, try_gen_asset
 
 
