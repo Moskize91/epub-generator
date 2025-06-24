@@ -11,6 +11,7 @@ class Context:
   def __init__(
         self,
         file: ZipFile,
+        template: "Template",
         assets_path: Path | None,
         table_render: TableRender,
         latex_render: LaTeXRender,
@@ -18,6 +19,7 @@ class Context:
 
     self._assets_path: Path | None = assets_path
     self._file: ZipFile = file
+    self._template: Template = template
     self._table_render: TableRender = table_render
     self._latex_render: LaTeXRender = latex_render
     self._used_file_names: dict[str, str] = {}
@@ -25,6 +27,10 @@ class Context:
   @property
   def file(self) -> ZipFile:
     return self._file
+  
+  @property
+  def template(self) -> "Template":
+    return self._template
 
   @property
   def table_render(self) -> TableRender:

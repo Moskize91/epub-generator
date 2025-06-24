@@ -1,1 +1,1 @@
-# 2epub
+# epub-generator

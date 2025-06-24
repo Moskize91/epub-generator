@@ -59,6 +59,7 @@ def generate_epub_file(
   with ZipFile(epub_file_path, "w") as file:
     context = Context(
       file=file,
+      template=template,
       assets_path=assets_path,
       table_render=table_render,
       latex_render=latex_render,
@@ -73,7 +74,6 @@ def generate_epub_file(
     )
     _write_chapters(
       context=context,
-      template=template,
       i18n=i18n,
       nav_points=nav_points,
       chapters_path=chapters_path,
@@ -82,7 +82,6 @@ def generate_epub_file(
     )
     _write_basic_files(
       context=context,
-      template=template,
       i18n=i18n,
       meta=meta,
       nav_points=nav_points,
@@ -91,7 +90,6 @@ def generate_epub_file(
     )
     _write_assets(
       context=context,
-      template=template,
       i18n=i18n,
       from_dir_path=from_dir_path,
       has_cover=has_cover,
@@ -99,19 +97,18 @@ def generate_epub_file(
 
 def _write_assets(
     context: Context,
-    template: Template,
     i18n: I18N,
     from_dir_path: Path,
     has_cover: bool,
   ):
   context.file.writestr(
     zinfo_or_arcname="OEBPS/styles/style.css",
-    data=template.render("style.css").encode("utf-8"),
+    data=context.template.render("style.css").encode("utf-8"),
   )
   if has_cover:
     context.file.writestr(
       zinfo_or_arcname="OEBPS/Text/cover.xhtml",
-      data=template.render(
+      data=context.template.render(
         template="cover.xhtml",
         i18n=i18n,
       ).encode("utf-8"),
@@ -125,7 +122,6 @@ def _write_assets(
 
 def _write_chapters(
     context: Context,
-    template: Template,
     i18n: I18N,
     nav_points: list[NavPoint],
     chapters_path: Path,
@@ -135,7 +131,7 @@ def _write_chapters(
 
   if has_head_chapter:
     chapter_xml = _read_xml(head_chapter_path)
-    data = generate_part(context, template, chapter_xml, i18n)
+    data = generate_part(context, chapter_xml, i18n)
     context.file.writestr(
       zinfo_or_arcname="OEBPS/Text/head.xhtml",
       data=data.encode("utf-8"),
@@ -144,7 +140,7 @@ def _write_chapters(
     chapter_path = chapters_path / f"chapter_{nav_point.index_id}.xml"
     if chapter_path.exists():
       chapter_xml = _read_xml(chapter_path)
-      data = generate_part(context, template, chapter_xml, i18n)
+      data = generate_part(context, chapter_xml, i18n)
       context.file.writestr(
         zinfo_or_arcname="OEBPS/Text/" + nav_point.file_name,
         data=data.encode("utf-8"),
@@ -152,7 +148,6 @@ def _write_chapters(
 
 def _write_basic_files(
     context: Context,
-    template: Template,
     i18n: I18N,
     meta: dict,
     nav_points: list[NavPoint],
@@ -161,9 +156,9 @@ def _write_basic_files(
   ):
   context.file.writestr(
     zinfo_or_arcname="META-INF/container.xml",
-    data=template.render("container.xml").encode("utf-8"),
+    data=context.template.render("container.xml").encode("utf-8"),
   )
-  content = template.render(
+  content = context.template.render(
     template="content.opf",
     meta=meta,
     i18n=i18n,

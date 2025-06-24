@@ -2,18 +2,17 @@ from typing import Generator
 from xml.etree.ElementTree import tostring, Element
 
 from .i18n import I18N
-from .context import Context, Template
+from .context import Context
 from .gen_asset import try_gen_table, try_gen_formula, try_gen_asset
 
 
 def generate_part(
       context: Context,
-      template: Template,
       chapter_xml: Element,
       i18n: I18N,
     ) -> str:
 
-  return template.render(
+  return context.template.render(
     template="part.xhtml",
     i18n=i18n,
     content=[
