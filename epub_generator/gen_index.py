@@ -125,8 +125,8 @@ class _NavPointGeneration:
     content_xml = Element("content")
     content_xml.set("src", f"Text/{nav_point.file_name}")
 
-    nav_point_xml.append(label_xml)
-    nav_point_xml.append(content_xml)
+    nav_point_xml.insert(0, label_xml)
+    nav_point_xml.insert(1, content_xml)
 
     return nav_point, nav_point_xml
 
