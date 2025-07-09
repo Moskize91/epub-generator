@@ -11,7 +11,6 @@ from .context import Template
 @dataclass
 class NavPoint:
   index_id: int
-  order: int
   file_name: str
 
 def gen_index(
@@ -41,8 +40,7 @@ def gen_index(
     for chapters_list in (prefaces, chapters):
       for chapter in chapters_list:
         element = nav_point_generation.generate(chapter)
-        if element is not None:
-          nav_elements.append(element)
+        nav_elements.append(element)
 
     depth = max(
       _max_depth(prefaces),
@@ -91,17 +89,33 @@ class _NavPointGeneration:
   def nav_points(self) -> list[NavPoint]:
     return self._nav_points
 
-  def generate(self, chapter: _Chapter) -> Element | None:
-    if not self._check_chapter_exits(chapter.id):
-      return None
-
-    part_id = str(chapter.id).zfill(self._digits)
-    file_name = f"part{part_id}.xhtml"
-    order = self._next_order
+  def generate(self, chapter: _Chapter) -> Element:
+    _, nav_point_xml = self._create_nav_point(chapter)
+    return nav_point_xml
+  
+  def _create_nav_point(self, chapter: _Chapter) -> tuple[NavPoint, Element]:
+    nav_point: NavPoint | None = None
+    if self._check_chapter_exits(chapter.id):
+      part_id = str(chapter.id).zfill(self._digits)
+      nav_point = NavPoint(
+        index_id=chapter.id,
+        file_name=f"part{part_id}.xhtml",
+      )
+      self._nav_points.append(nav_point)
 
     nav_point_xml = Element("navPoint")
     nav_point_xml.set("id", f"np_{chapter.id}")
-    nav_point_xml.set("playOrder", str(order))
+    nav_point_xml.set("playOrder", str(self._next_order))
+    self._next_order += 1
+
+    for child in chapter.children:
+      child, child_xml = self._create_nav_point(child)
+      if child_xml is not None:
+        nav_point_xml.append(child_xml)
+      if nav_point is None:
+        nav_point = child
+
+    assert nav_point is not None, "Nav does not have any valid chapters"
 
     label_xml = Element("navLabel")
     label_text_xml = Element("text")
@@ -109,23 +123,12 @@ class _NavPointGeneration:
     label_xml.append(label_text_xml)
 
     content_xml = Element("content")
-    content_xml.set("src", f"Text/{file_name}")
+    content_xml.set("src", f"Text/{nav_point.file_name}")
 
     nav_point_xml.append(label_xml)
     nav_point_xml.append(content_xml)
 
-    self._next_order += 1
-    self._nav_points.append(NavPoint(
-      index_id=chapter.id,
-      order=order,
-      file_name=file_name,
-    ))
-    for child in chapter.children:
-      child_xml = self.generate(child)
-      if child_xml is not None:
-        nav_point_xml.append(child_xml)
-
-    return nav_point_xml
+    return nav_point, nav_point_xml
 
 @dataclass
 class _Chapter:
