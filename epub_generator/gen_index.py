@@ -12,6 +12,7 @@ from .context import Template
 class NavPoint:
   index_id: int
   file_name: str
+  order: int
 
 def gen_index(
     template: Template,
@@ -100,14 +101,12 @@ class _NavPointGeneration:
       nav_point = NavPoint(
         index_id=chapter.id,
         file_name=f"part{part_id}.xhtml",
+        order=self._next_order,
       )
       self._nav_points.append(nav_point)
+      self._next_order += 1
 
     nav_point_xml = Element("navPoint")
-    nav_point_xml.set("id", f"np_{chapter.id}")
-    nav_point_xml.set("playOrder", str(self._next_order))
-    self._next_order += 1
-
     for child in chapter.children:
       child, child_xml = self._create_nav_point(child)
       if child_xml is not None:
@@ -116,6 +115,9 @@ class _NavPointGeneration:
         nav_point = child
 
     assert nav_point is not None, "Nav does not have any valid chapters"
+
+    nav_point_xml.set("id", f"np_{chapter.id}")
+    nav_point_xml.set("playOrder", str(nav_point.order))
 
     label_xml = Element("navLabel")
     label_text_xml = Element("text")
