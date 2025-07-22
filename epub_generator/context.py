@@ -75,7 +75,7 @@ class Context:
 
 class Template:
   def __init__(self):
-    templates_path = cast(Path, files("pdf_craft")) / "data" / "templates"
+    templates_path = cast(Path, files("epub_generator")) / "templates"
     self._env: Environment = create_env(templates_path)
     self._templates: dict[str, JinjaTemplate] = {}
 
