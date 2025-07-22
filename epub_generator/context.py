@@ -1,4 +1,5 @@
 from pathlib import Path
+from typing import cast
 from zipfile import ZipFile
 from importlib.resources import files
 from jinja2 import Environment, Template as JinjaTemplate
@@ -74,16 +75,16 @@ class Context:
 
 class Template:
   def __init__(self):
-    templates_path = files("pdf_craft") / "data" / "templates"
+    templates_path = cast(Path, files("epub_generator")) / "data"
     self._env: Environment = create_env(templates_path)
     self._templates: dict[str, JinjaTemplate] = {}
 
   def render(self, template: str, **params) -> str:
-    template: JinjaTemplate = self._template(template)
-    return template.render(**params)
+    jinja_template: JinjaTemplate = self._template(template)
+    return jinja_template.render(**params)
 
   def _template(self, name: str) -> JinjaTemplate:
-    template: JinjaTemplate = self._templates.get(name, None)
+    template = self._templates.get(name, None)
     if template is None:
       template = self._env.get_template(name)
       self._templates[name] = template
