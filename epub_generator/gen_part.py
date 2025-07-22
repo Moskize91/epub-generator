@@ -57,7 +57,7 @@ def _render_footnotes(context: Context, chapter_element: Element):
     if not found_mark or len(citation_div) == 0:
       continue
 
-    footnote_id = int(footnote.get("id"))
+    footnote_id = int(footnote.get("id", "-1"))
     ref = Element("a")
     ref.text = f"[{footnote_id}]"
     ref.attrib = {
@@ -86,7 +86,7 @@ def _render_layout(context: Context, raw_layout: Element) -> Element | None:
     layout.text = raw_layout.text
     for mark in raw_layout:
       assert mark.tag == "mark"
-      mark_id = int(mark.get("id"))
+      mark_id = int(mark.get("id", ""))
       anchor = Element("a")
       anchor.attrib = {
         "id": f"ref-{mark_id}",
@@ -109,7 +109,10 @@ def _render_layout(context: Context, raw_layout: Element) -> Element | None:
       "class": "alt-wrapper",
     })
     if raw_layout.tag == "table":
-      asset_wrapper.extend(try_gen_table(context, raw_layout))
+      table_children = try_gen_table(context, raw_layout)
+      assert table_children is not None
+      asset_wrapper.extend(table_children)
+
     elif raw_layout.tag == "formula":
       formula = try_gen_formula(context, raw_layout)
       if formula is not None:
