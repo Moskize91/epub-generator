@@ -2,13 +2,13 @@ import re
 
 from typing import Tuple, Callable
 from pathlib import Path
-from jinja2 import select_autoescape, Environment, BaseLoader, TemplateNotFound
+from jinja2 import Environment, BaseLoader, TemplateNotFound
 
 
 def create_env(dir_path: Path) -> Environment:
   return Environment(
     loader=_DSLoader(dir_path),
-    autoescape=select_autoescape(),
+    autoescape=True,
     trim_blocks=True,
     keep_trailing_newline=True,
   )
