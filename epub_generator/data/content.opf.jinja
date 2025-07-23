@@ -38,7 +38,7 @@
   <manifest>
     <item id="a_css" media-type="text/css" href="styles/style.css" />
 {% for asset_file, media_type in asset_files %}
-    <item id="a_{{ asset_file }}" media-type="{{ media_type }}" href="assets/{{ asset_file }}" />
+    <item id="a_{{ asset_file|safe }}" media-type="{{ media_type|safe }}" href="assets/{{ asset_file|safe }}" />
 {% endfor%}
 {% if has_cover %}
     <item id="a_cover" media-type="image/png" href="assets/cover.png" />
@@ -48,7 +48,7 @@
     <item id="x_head.xhtml" media-type="application/xhtml+xml" href="Text/head.xhtml" />
 {% endif %}
 {% for nav_point in nav_points %}
-    <item id="x_{{ nav_point.file_name }}" media-type="application/xhtml+xml" href="Text/{{ nav_point.file_name }}" />
+    <item id="x_{{ nav_point.file_name|safe }}" media-type="application/xhtml+xml" href="Text/{{ nav_point.file_name|safe }}" />
 {% endfor %}
     <item id="ncx" media-type="application/x-dtbncx+xml" href="toc.ncx" />
   </manifest>
@@ -60,7 +60,7 @@
     <itemref idref="x_head.xhtml" />
 {% endif %}
 {% for nav_point in nav_points %}
-    <itemref idref="x_{{ nav_point.file_name }}" />
+    <itemref idref="x_{{ nav_point.file_name|safe }}" />
 {% endfor %}
   </spine>
 </package>
