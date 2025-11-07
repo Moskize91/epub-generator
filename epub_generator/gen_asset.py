@@ -1,5 +1,6 @@
 import io
 import re
+from typing import Any, cast
 from xml.etree.ElementTree import Element, fromstring
 
 import matplotlib.pyplot as plt
@@ -100,7 +101,7 @@ def _latex_formula2svg(latex: str, font_size: int = 12):
         txt = ax.text(0.5, 0.5, f"${latex}$", ha="center", va="center", transform=ax.transAxes)
         ax.axis("off")
         fig.canvas.draw()
-        bbox = txt.get_window_extent(renderer=fig.canvas.get_renderer())
+        bbox = txt.get_window_extent(cast(Any, fig.canvas).get_renderer())
         fig.set_size_inches(bbox.width / fig.dpi, bbox.height / fig.dpi)
         plt.savefig(
             output,
