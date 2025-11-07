@@ -6,8 +6,8 @@
     <meta content="0" name="dtb:maxPageNumber" />
   </head>
   <docTitle>
-{% if "title" in meta %}
-    <text>{{ meta["title"] }}</text>
+{% if meta and meta.title %}
+    <text>{{ meta.title }}</text>
 {% else %}
     <text>{{ i18n.unnamed }}</text>
 {% endif %}

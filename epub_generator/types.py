@@ -99,6 +99,23 @@ class BookMeta:
     translators: list[str] = field(default_factory=list)
     """List of translators (optional)"""
 
+    def to_dict(self) -> dict:
+        """Convert BookMeta to dictionary format used in templates.
+
+        Returns:
+            Dictionary with keys: title, description, publisher, ISBN,
+            authors, editors, translators
+        """
+        return {
+            "title": self.title,
+            "description": self.description,
+            "publisher": self.publisher,
+            "ISBN": self.isbn,
+            "authors": self.authors,
+            "editors": self.editors,
+            "translators": self.translators,
+        }
+
 
 # ============================================================================
 # Table of Contents structure

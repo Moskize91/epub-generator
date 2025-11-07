@@ -1,5 +1,6 @@
 import io
 import re
+from pathlib import Path
 from typing import Any, cast
 from xml.etree.ElementTree import Element, fromstring
 
@@ -53,8 +54,27 @@ def try_gen_asset(context: Context, element: Element) -> Element | None:
     if hash is None:
         return None
 
-    file_name = f"{hash}.png"
-    context.use_asset(file_name, "image/png")
+    source_path_str = element.get("_source_path", None)
+    if not source_path_str:
+        raise ValueError("Image element missing _source_path attribute")
+
+    source_path = Path(source_path_str)
+
+    # Determine file extension from source path
+    file_ext = source_path.suffix or ".png"
+    file_name = f"{hash}{file_ext}"
+
+    # Determine media type from extension
+    media_type_map = {
+        ".png": "image/png",
+        ".jpg": "image/jpeg",
+        ".jpeg": "image/jpeg",
+        ".gif": "image/gif",
+        ".svg": "image/svg+xml",
+    }
+    media_type = media_type_map.get(file_ext.lower(), "image/png")
+
+    context.use_asset(file_name, media_type, source_path)
 
     return _create_image_element(file_name, element)
 
