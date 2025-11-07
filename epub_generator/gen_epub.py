@@ -10,7 +10,7 @@ from .context import Context, Template
 from .gen_index import NavPoint, gen_index
 from .gen_part import generate_part
 from .i18n import I18N
-from .types import LaTeXRender, TableRender
+from .options import LaTeXRender, TableRender
 
 
 def generate_epub_file(

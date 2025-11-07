@@ -7,7 +7,7 @@ from jinja2 import Environment
 from jinja2 import Template as JinjaTemplate
 
 from .template import create_env
-from .types import LaTeXRender, TableRender
+from .options import LaTeXRender, TableRender
 
 
 class Context:

@@ -8,7 +8,7 @@ from latex2mathml.converter import convert
 
 from .context import Context
 from .hash import sha256_hash
-from .types import LaTeXRender
+from .options import LaTeXRender
 
 
 def try_gen_table(context: Context, element: Element) -> list[Element] | None:
