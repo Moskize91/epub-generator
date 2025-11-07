@@ -6,8 +6,8 @@ from zipfile import ZipFile
 from jinja2 import Environment
 from jinja2 import Template as JinjaTemplate
 
+from .options import LaTeXRender, TableRender
 from .template import create_env
-from .types import LaTeXRender, TableRender
 
 
 class Context:
@@ -15,17 +15,15 @@ class Context:
         self,
         file: ZipFile,
         template: "Template",
-        assets_path: Path | None,
         table_render: TableRender,
         latex_render: LaTeXRender,
     ) -> None:
-
-        self._assets_path: Path | None = assets_path
         self._file: ZipFile = file
         self._template: Template = template
         self._table_render: TableRender = table_render
         self._latex_render: LaTeXRender = latex_render
         self._used_file_names: dict[str, str] = {}
+        self._asset_file_paths: dict[str, Path] = {}
 
     @property
     def file(self) -> ZipFile:
@@ -43,8 +41,16 @@ class Context:
     def latex_render(self) -> LaTeXRender:
         return self._latex_render
 
-    def use_asset(self, file_name: str, media_type: str) -> None:
+    def use_asset(self, file_name: str, media_type: str, source_path: Path) -> None:
+        """Register an asset file for inclusion in the EPUB.
+
+        Args:
+            file_name: The filename to use in the EPUB archive
+            media_type: The MIME type of the asset
+            source_path: Source file path
+        """
         self._used_file_names[file_name] = media_type
+        self._asset_file_paths[file_name] = source_path
 
     def add_asset(self, file_name: str, media_type: str, data: bytes) -> None:
         if file_name in self._used_file_names:
@@ -65,15 +71,13 @@ class Context:
         return used_files
 
     def add_used_asset_files(self) -> None:
-        if self._assets_path is None:
-            return
-        for file in sorted(self._assets_path.iterdir()):
-            if file.name not in self._used_file_names:
-                continue
-            self._file.write(
-                filename=file,
-                arcname="OEBPS/assets/" + file.name,
-            )
+        """Write all registered asset files to the EPUB archive."""
+        for file_name, source_path in self._asset_file_paths.items():
+            if source_path.exists():
+                self._file.write(
+                    filename=source_path,
+                    arcname="OEBPS/assets/" + file_name,
+                )
 
 
 class Template:

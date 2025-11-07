@@ -1,65 +1,39 @@
-import json
 from os import PathLike
 from pathlib import Path
 from typing import Literal
 from uuid import uuid4
-from xml.etree.ElementTree import Element, fromstring
 from zipfile import ZipFile
 
 from .context import Context, Template
-from .gen_index import NavPoint, gen_index
-from .gen_part import generate_part
+from .gen_chapter import generate_chapter
+from .gen_toc import NavPoint, gen_toc
 from .i18n import I18N
-from .types import LaTeXRender, TableRender
+from .options import LaTeXRender, TableRender
+from .types import BookMeta, EpubData
 
 
-def generate_epub_file(
-    from_dir_path: PathLike,
+def generate_epub(
+    epub_data: EpubData,
     epub_file_path: PathLike,
     lan: Literal["zh", "en"] = "zh",
     table_render: TableRender = TableRender.HTML,
     latex_render: LaTeXRender = LaTeXRender.MATHML,
 ) -> None:
-
     i18n = I18N(lan)
     template = Template()
-    from_dir_path = Path(from_dir_path)
     epub_file_path = Path(epub_file_path)
-    index_path = from_dir_path / "index.json"
-    meta_path = from_dir_path / "meta.json"
-    assets_path: Path | None = from_dir_path / "assets"
-    chapters_path: Path = from_dir_path / "chapters"
-    head_chapter_path = chapters_path / "chapter.xml"
 
-    toc_ncx: str
-    nav_points: list[NavPoint] = []
-    meta: dict = {}
-    has_head_chapter: bool = head_chapter_path.exists()
-    has_cover: bool = (from_dir_path / "cover.png").exists()
-
-    if meta_path.exists():
-        with open(meta_path, "r", encoding="utf-8") as f:
-            meta = json.loads(f.read())
-
-    if not assets_path.exists():
-        assets_path = None
-
-    toc_ncx, nav_points = gen_index(
+    toc_ncx, nav_points = gen_toc(
         template=template,
         i18n=i18n,
-        meta=meta,
-        index_file_path=index_path,
-        has_cover=has_cover,
-        check_chapter_exits=lambda id: (chapters_path / f"chapter_{id}.xml").exists(),
+        epub_data=epub_data,
     )
-    epub_base_path = epub_file_path.parent
-    epub_base_path.mkdir(parents=True, exist_ok=True)
+    epub_file_path.parent.mkdir(parents=True, exist_ok=True)
 
     with ZipFile(epub_file_path, "w") as file:
         context = Context(
             file=file,
             template=template,
-            assets_path=assets_path,
             table_render=table_render,
             latex_render=latex_render,
         )
@@ -71,41 +45,37 @@ def generate_epub_file(
             zinfo_or_arcname="OEBPS/toc.ncx",
             data=toc_ncx.encode("utf-8"),
         )
-        _write_chapters(
+        _write_chapters_from_data(
             context=context,
             i18n=i18n,
             nav_points=nav_points,
-            chapters_path=chapters_path,
-            has_head_chapter=has_head_chapter,
-            head_chapter_path=head_chapter_path,
+            epub_data=epub_data,
         )
         _write_basic_files(
             context=context,
             i18n=i18n,
-            meta=meta,
+            meta=epub_data.meta,
             nav_points=nav_points,
-            has_cover=has_cover,
-            has_head_chapter=has_head_chapter,
+            has_cover=epub_data.cover_image_path is not None,
+            has_head_chapter=epub_data.get_head is not None,
         )
-        _write_assets(
+        _write_assets_from_data(
             context=context,
             i18n=i18n,
-            from_dir_path=from_dir_path,
-            has_cover=has_cover,
+            epub_data=epub_data,
         )
 
 
-def _write_assets(
+def _write_assets_from_data(
     context: Context,
     i18n: I18N,
-    from_dir_path: Path,
-    has_cover: bool,
+    epub_data: EpubData,
 ):
     context.file.writestr(
         zinfo_or_arcname="OEBPS/styles/style.css",
         data=context.template.render("style.css").encode("utf-8"),
     )
-    if has_cover:
+    if epub_data.cover_image_path:
         context.file.writestr(
             zinfo_or_arcname="OEBPS/Text/cover.xhtml",
             data=context.template.render(
@@ -113,45 +83,40 @@ def _write_assets(
                 i18n=i18n,
             ).encode("utf-8"),
         )
-    if has_cover:
-        context.file.write(
-            filename=from_dir_path / "cover.png",
-            arcname="OEBPS/assets/cover.png",
-        )
+        if epub_data.cover_image_path:
+            context.file.write(
+                filename=epub_data.cover_image_path,
+                arcname="OEBPS/assets/cover.png",
+            )
     context.add_used_asset_files()
 
-
-def _write_chapters(
+def _write_chapters_from_data(
     context: Context,
     i18n: I18N,
     nav_points: list[NavPoint],
-    chapters_path: Path,
-    has_head_chapter: bool,
-    head_chapter_path: Path,
+    epub_data: EpubData,
 ):
-
-    if has_head_chapter:
-        chapter_xml = _read_xml(head_chapter_path)
-        data = generate_part(context, chapter_xml, i18n)
+    if epub_data.get_head is not None:
+        chapter = epub_data.get_head()
+        data = generate_chapter(context, chapter, i18n)
         context.file.writestr(
             zinfo_or_arcname="OEBPS/Text/head.xhtml",
             data=data.encode("utf-8"),
         )
+
     for nav_point in nav_points:
-        chapter_path = chapters_path / f"chapter_{nav_point.index_id}.xml"
-        if chapter_path.exists():
-            chapter_xml = _read_xml(chapter_path)
-            data = generate_part(context, chapter_xml, i18n)
+        if nav_point.get_chapter is not None:
+            chapter = nav_point.get_chapter()
+            data = generate_chapter(context, chapter, i18n)
             context.file.writestr(
                 zinfo_or_arcname="OEBPS/Text/" + nav_point.file_name,
                 data=data.encode("utf-8"),
             )
 
-
 def _write_basic_files(
     context: Context,
     i18n: I18N,
-    meta: dict,
+    meta: BookMeta | None,
     nav_points: list[NavPoint],
     has_cover: bool,
     has_head_chapter: bool,
@@ -160,11 +125,12 @@ def _write_basic_files(
         zinfo_or_arcname="META-INF/container.xml",
         data=context.template.render("container.xml").encode("utf-8"),
     )
+    isbn = (meta.isbn if meta else None) or str(uuid4())
     content = context.template.render(
         template="content.opf",
         meta=meta,
         i18n=i18n,
-        ISBN=meta.get("ISBN", str(uuid4())),
+        ISBN=isbn,
         nav_points=nav_points,
         has_head_chapter=has_head_chapter,
         has_cover=has_cover,
@@ -174,8 +140,3 @@ def _write_basic_files(
         zinfo_or_arcname="OEBPS/content.opf",
         data=content.encode("utf-8"),
     )
-
-
-def _read_xml(path: Path) -> Element:
-    with open(path, "r", encoding="utf-8") as file:
-        return fromstring(file.read())

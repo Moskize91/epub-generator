@@ -8,31 +8,41 @@ from latex2mathml.converter import convert
 
 from .context import Context
 from .hash import sha256_hash
-from .types import LaTeXRender
+from .options import LaTeXRender, TableRender
+from .types import Formula, Image, Table
 
+_MEDIA_TYPE_MAP = {
+    ".png": "image/png",
+    ".jpg": "image/jpeg",
+    ".jpeg": "image/jpeg",
+    ".gif": "image/gif",
+    ".svg": "image/svg+xml",
+}
 
-def try_gen_table(context: Context, element: Element) -> list[Element] | None:
-    if context.table_render == LaTeXRender.CLIPPING:
+def process_table(context: Context, table: Table) -> Element | None:
+    if context.table_render == TableRender.CLIPPING:
+        return None
+    try:
+        wrapped_html = f"<div>{table.html_content}</div>"
+        parsed = fromstring(wrapped_html)
+        wrapper = Element("div", attrib={"class": "alt-wrapper"})
+
+        for child in parsed:
+            wrapper.append(child)
+
+        return wrapper if len(wrapper) > 0 else None
+    except Exception:
         return None
 
-    table_html = _find_child(element, ("html",))
-    children: list[Element] = []
-    if table_html is not None:
-        for child in table_html:
-            children.append(child)
 
-    return children
-
-
-def try_gen_formula(context: Context, element: Element) -> Element | None:
+def process_formula(context: Context, formula: Formula) -> Element | None:
     if context.latex_render == LaTeXRender.CLIPPING:
         return None
 
-    latex = (element.text or "").strip()
-    if not latex:
+    latex_expr = _normalize_expression(formula.latex_expression)
+    if not latex_expr:
         return None
 
-    latex_expr = _normalize_expression(latex)
     if context.latex_render == LaTeXRender.MATHML:
         return _latex2mathml(latex_expr)
 
@@ -42,21 +52,37 @@ def try_gen_formula(context: Context, element: Element) -> Element | None:
             return None
 
         file_name = f"{sha256_hash(svg_image)}.svg"
-        img_element = _create_image_element(file_name, element)
+        img_element = Element("img")
+        img_element.set("src", f"../assets/{file_name}")
+        img_element.set("alt", "formula")
+
         context.add_asset(file_name, "image/svg+xml", svg_image)
 
-        return img_element
+        wrapper = Element("div", attrib={"class": "alt-wrapper"})
+        wrapper.append(img_element)
+        return wrapper
 
+    return None
 
-def try_gen_asset(context: Context, element: Element) -> Element | None:
-    hash = element.get("hash", None)
-    if hash is None:
-        return None
+def process_image(context: Context, image: Image) -> Element | None:
+    if not image.path.exists():
+        raise FileNotFoundError(f"Image file not found: {image.path}")
 
-    file_name = f"{hash}.png"
-    context.use_asset(file_name, "image/png")
+    with open(image.path, "rb") as f:
+        file_hash = sha256_hash(f.read())
 
-    return _create_image_element(file_name, element)
+    file_ext = image.path.suffix or ".png"
+    file_name = f"{file_hash}{file_ext}"
+    media_type = _MEDIA_TYPE_MAP.get(file_ext.lower(), "image/png")
+    context.use_asset(file_name, media_type, image.path)
+
+    img_element = Element("img")
+    img_element.set("src", f"../assets/{file_name}")
+    img_element.set("alt", image.alt_text)
+
+    wrapper = Element("div", attrib={"class": "alt-wrapper"})
+    wrapper.append(img_element)
+    return wrapper
 
 
 _ESCAPE_UNICODE_PATTERN = re.compile(r"&#x([0-9A-Fa-f]{5});")
@@ -113,28 +139,6 @@ def _latex_formula2svg(latex: str, font_size: int = 12):
         return output.getvalue()
     except Exception:
         return None
-
-
-def _create_image_element(file_name: str, origin: Element):
-    img_element = Element("img")
-    img_element.set("src", f"../assets/{file_name}")
-    alt: str | None = None
-
-    if origin.text:
-        alt = origin.text
-    if alt is None:
-        img_element.set("alt", "image")
-    else:
-        img_element.set("alt", alt)
-
-    return img_element
-
-
-def _find_child(parent: Element, tags: tuple[str, ...]) -> Element | None:
-    for child in parent:
-        if child.tag in tags:
-            return child
-    return None
 
 
 def _normalize_expression(expression: str) -> str:
