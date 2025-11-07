@@ -23,13 +23,13 @@ class EpubData:
 
     Origin mapping:
     - Replaces the entire input folder structure
-    - Combines meta.json, index.json, cover.png, and chapter files
+    - Combines meta.json, toc.json, cover.png, and chapter files
 
     Fields origin:
     - meta: from meta.json
     - get_head: lazy getter for chapters/chapter.xml (head chapter without TOC entry)
-    - prefaces: from index.json["prefaces"] (combined with chapter file getters)
-    - chapters: from index.json["chapters"] (combined with chapter file getters)
+    - prefaces: from toc.json["prefaces"] (combined with chapter file getters)
+    - chapters: from toc.json["chapters"] (combined with chapter file getters)
     - cover_image_path: from cover.png
 
     Constraints:
@@ -44,10 +44,10 @@ class EpubData:
     """Lazy getter for head chapter from chapters/chapter.xml (optional)"""
 
     prefaces: "list[TocItem]" = field(default_factory=list)
-    """Preface chapters from index.json["prefaces"] + chapter files (optional)"""
+    """Preface chapters from toc.json["prefaces"] + chapter files (optional)"""
 
     chapters: "list[TocItem]" = field(default_factory=list)
-    """Main chapters from index.json["chapters"] + chapter files"""
+    """Main chapters from toc.json["chapters"] + chapter files"""
 
     cover_image_path: Path | None = None
     """Cover image file path from cover.png (optional, absolute path)"""
@@ -99,23 +99,6 @@ class BookMeta:
     translators: list[str] = field(default_factory=list)
     """List of translators (optional)"""
 
-    def to_dict(self) -> dict:
-        """Convert BookMeta to dictionary format used in templates.
-
-        Returns:
-            Dictionary with keys: title, description, publisher, ISBN,
-            authors, editors, translators
-        """
-        return {
-            "title": self.title,
-            "description": self.description,
-            "publisher": self.publisher,
-            "ISBN": self.isbn,
-            "authors": self.authors,
-            "editors": self.editors,
-            "translators": self.translators,
-        }
-
 
 # ============================================================================
 # Table of Contents structure
@@ -126,12 +109,12 @@ class TocItem:
     """
     A table of contents item with title, content, and optional nested children.
 
-    Origin: Combines index.json entries with chapter files
+    Origin: Combines toc.json entries with chapter files
     - title: from "headline" field
     - get_chapter: lazy getter for chapter file content
     - children: from "children" array (recursive)
 
-    Original structure in index.json:
+    Original structure in toc.json:
     {
       "id": integer,           // Used to map to chapter file, removed in dataclass
       "headline": "string",    // Mapped to TocItem.title

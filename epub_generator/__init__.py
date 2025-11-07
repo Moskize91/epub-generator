@@ -1,25 +1,25 @@
-from .gen_epub import generate_epub_from_data
+from .gen_epub import generate_epub
 from .options import LaTeXRender, TableRender
 from .types import (
-    EpubData,
     BookMeta,
-    TocItem,
     Chapter,
     ChapterGetter,
     ContentBlock,
+    EpubData,
+    Footnote,
+    Formula,
     Headline,
-    Text,
+    Image,
+    Mark,
     Quote,
     Table,
-    Formula,
-    Image,
-    Footnote,
-    Mark,
+    Text,
+    TocItem,
 )
 
 __all__ = [
     # Main API function
-    "generate_epub_from_data",
+    "generate_epub",
     # Options
     "TableRender",
     "LaTeXRender",

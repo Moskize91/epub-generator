@@ -1,6 +1,5 @@
 import io
 import re
-from pathlib import Path
 from typing import Any, cast
 from xml.etree.ElementTree import Element, fromstring
 
@@ -9,31 +8,63 @@ from latex2mathml.converter import convert
 
 from .context import Context
 from .hash import sha256_hash
-from .options import LaTeXRender
+from .options import LaTeXRender, TableRender
+from .types import Formula, Image, Table
 
+_MEDIA_TYPE_MAP = {
+    ".png": "image/png",
+    ".jpg": "image/jpeg",
+    ".jpeg": "image/jpeg",
+    ".gif": "image/gif",
+    ".svg": "image/svg+xml",
+}
 
-def try_gen_table(context: Context, element: Element) -> list[Element] | None:
-    if context.table_render == LaTeXRender.CLIPPING:
+def process_table(context: Context, table: Table) -> Element | None:
+    """Process Table dataclass to HTML elements.
+
+    Args:
+        context: Context with render settings
+        table: Table dataclass with html_content
+
+    Returns:
+        Wrapper div Element with table HTML, or None if clipped
+    """
+    if context.table_render == TableRender.CLIPPING:
         return None
 
-    table_html = _find_child(element, ("html",))
-    children: list[Element] = []
-    if table_html is not None:
-        for child in table_html:
-            children.append(child)
+    # Parse HTML table content
+    try:
+        # Wrap in a container to ensure valid XML parsing
+        wrapped_html = f"<div>{table.html_content}</div>"
+        parsed = fromstring(wrapped_html)
 
-    return children
+        wrapper = Element("div", attrib={"class": "alt-wrapper"})
+        # Add all children from the parsed HTML
+        for child in parsed:
+            wrapper.append(child)
+
+        return wrapper if len(wrapper) > 0 else None
+    except Exception:
+        return None
 
 
-def try_gen_formula(context: Context, element: Element) -> Element | None:
+def process_formula(context: Context, formula: Formula) -> Element | None:
+    """Process Formula dataclass to MathML or SVG image.
+
+    Args:
+        context: Context with render settings and asset management
+        formula: Formula dataclass with latex_expression
+
+    Returns:
+        Element (MathML or img), or None if clipped/failed
+    """
     if context.latex_render == LaTeXRender.CLIPPING:
         return None
 
-    latex = (element.text or "").strip()
-    if not latex:
+    latex_expr = _normalize_expression(formula.latex_expression)
+    if not latex_expr:
         return None
 
-    latex_expr = _normalize_expression(latex)
     if context.latex_render == LaTeXRender.MATHML:
         return _latex2mathml(latex_expr)
 
@@ -43,46 +74,66 @@ def try_gen_formula(context: Context, element: Element) -> Element | None:
             return None
 
         file_name = f"{sha256_hash(svg_image)}.svg"
-        img_element = _create_image_element(file_name, element)
+        img_element = Element("img")
+        img_element.set("src", f"../assets/{file_name}")
+        img_element.set("alt", "formula")
+
         context.add_asset(file_name, "image/svg+xml", svg_image)
 
-        return img_element
+        wrapper = Element("div", attrib={"class": "alt-wrapper"})
+        wrapper.append(img_element)
+        return wrapper
 
+    return None
 
-def try_gen_asset(context: Context, element: Element) -> Element | None:
-    hash = element.get("hash", None)
-    if hash is None:
-        return None
+def process_image(context: Context, image: Image) -> Element | None:
+    """Process Image dataclass to <img> element.
 
-    source_path_str = element.get("_source_path", None)
-    if not source_path_str:
-        raise ValueError("Image element missing _source_path attribute")
+    Args:
+        context: Context with asset management
+        image: Image dataclass with path and alt_text
 
-    source_path = Path(source_path_str)
+    Returns:
+        Wrapper div Element with img, or None if file not found
+    """
+    if not image.path.exists():
+        raise FileNotFoundError(f"Image file not found: {image.path}")
 
-    # Determine file extension from source path
-    file_ext = source_path.suffix or ".png"
-    file_name = f"{hash}{file_ext}"
+    # Calculate hash from file content
+    with open(image.path, "rb") as f:
+        file_hash = sha256_hash(f.read())
 
-    # Determine media type from extension
-    media_type_map = {
-        ".png": "image/png",
-        ".jpg": "image/jpeg",
-        ".jpeg": "image/jpeg",
-        ".gif": "image/gif",
-        ".svg": "image/svg+xml",
-    }
-    media_type = media_type_map.get(file_ext.lower(), "image/png")
+    # Determine file extension and media type
+    file_ext = image.path.suffix or ".png"
+    file_name = f"{file_hash}{file_ext}"
 
-    context.use_asset(file_name, media_type, source_path)
+    media_type = _MEDIA_TYPE_MAP.get(file_ext.lower(), "image/png")
 
-    return _create_image_element(file_name, element)
+    # Register asset for later writing
+    context.use_asset(file_name, media_type, image.path)
+
+    # Create img element
+    img_element = Element("img")
+    img_element.set("src", f"../assets/{file_name}")
+    img_element.set("alt", image.alt_text)
+
+    wrapper = Element("div", attrib={"class": "alt-wrapper"})
+    wrapper.append(img_element)
+    return wrapper
 
 
 _ESCAPE_UNICODE_PATTERN = re.compile(r"&#x([0-9A-Fa-f]{5});")
 
 
 def _latex2mathml(latex: str) -> None | Element:
+    """Convert LaTeX expression to MathML Element.
+
+    Args:
+        latex: LaTeX expression string
+
+    Returns:
+        MathML Element, or None if conversion failed
+    """
     try:
         html_latex = convert(latex)
     except Exception:
@@ -112,6 +163,15 @@ def _latex2mathml(latex: str) -> None | Element:
 
 
 def _latex_formula2svg(latex: str, font_size: int = 12):
+    """Convert LaTeX formula to SVG image bytes.
+
+    Args:
+        latex: LaTeX expression string
+        font_size: Font size for rendering
+
+    Returns:
+        SVG image as bytes, or None if rendering failed
+    """
     # from https://www.cnblogs.com/qizhou/p/18170083
     try:
         output = io.BytesIO()
@@ -135,29 +195,15 @@ def _latex_formula2svg(latex: str, font_size: int = 12):
         return None
 
 
-def _create_image_element(file_name: str, origin: Element):
-    img_element = Element("img")
-    img_element.set("src", f"../assets/{file_name}")
-    alt: str | None = None
-
-    if origin.text:
-        alt = origin.text
-    if alt is None:
-        img_element.set("alt", "image")
-    else:
-        img_element.set("alt", alt)
-
-    return img_element
-
-
-def _find_child(parent: Element, tags: tuple[str, ...]) -> Element | None:
-    for child in parent:
-        if child.tag in tags:
-            return child
-    return None
-
-
 def _normalize_expression(expression: str) -> str:
+    """Normalize LaTeX expression by removing newlines and whitespace.
+
+    Args:
+        expression: Raw LaTeX expression
+
+    Returns:
+        Normalized expression string
+    """
     expression = expression.replace("\n", "")
     expression = expression.strip()
     return expression
