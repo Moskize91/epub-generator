@@ -1,85 +1,33 @@
-"""
-Data structures for EPUB generation.
-
-This module defines dataclasses that represent the complete structure
-of an EPUB book, providing an alternative to the folder-based input format.
-"""
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Callable
 
-# ============================================================================
-# Top-level EPUB Data Structure
-# ============================================================================
 
 @dataclass
 class EpubData:
-    """
-    Complete EPUB book data structure.
+    """Complete EPUB book data structure."""
 
-    This is the top-level data structure that replaces the entire
-    input folder structure. Pass this to the generation function
-    instead of a folder path.
-
-    Origin mapping:
-    - Replaces the entire input folder structure
-    - Combines meta.json, toc.json, cover.png, and chapter files
-
-    Fields origin:
-    - meta: from meta.json
-    - get_head: lazy getter for chapters/chapter.xml (head chapter without TOC entry)
-    - prefaces: from toc.json["prefaces"] (combined with chapter file getters)
-    - chapters: from toc.json["chapters"] (combined with chapter file getters)
-    - cover_image_path: from cover.png
-
-    Constraints:
-    - Each Image.path should be an absolute path to the image file
-    - Each Mark.id should match a Footnote.id
-    - At least one chapter with content should exist
-    """
     meta: "BookMeta | None" = None
-    """Book metadata from meta.json (optional)"""
+    """Book metadata (optional)"""
 
     get_head: "ChapterGetter | None" = None
-    """Lazy getter for head chapter from chapters/chapter.xml (optional)"""
+    """Lazy getter for head chapter without TOC entry (optional)"""
 
     prefaces: "list[TocItem]" = field(default_factory=list)
-    """Preface chapters from toc.json["prefaces"] + chapter files (optional)"""
+    """Preface chapters (optional)"""
 
     chapters: "list[TocItem]" = field(default_factory=list)
-    """Main chapters from toc.json["chapters"] + chapter files"""
+    """Main chapters"""
 
     cover_image_path: Path | None = None
-    """Cover image file path from cover.png (optional, absolute path)"""
-
-
-# ============================================================================
-# Book Metadata
-# ============================================================================
+    """Cover image file path (optional, absolute path)"""
 
 @dataclass
 class BookMeta:
-    """
-    Book metadata information.
+    """Book metadata information."""
 
-    Origin: meta.json file
-
-    All fields are optional. Missing fields will use defaults or be omitted
-    from the EPUB metadata.
-
-    Original structure:
-    {
-      "title": "string",
-      "description": "string",
-      "publisher": "string",
-      "ISBN": "string",
-      "authors": ["string", ...],
-      "editors": ["string", ...],
-      "translators": ["string", ...]
-    }
-    """
     title: str | None = None
-    """Book title (optional, defaults to "Unnamed")"""
+    """Book title (optional)"""
 
     description: str | None = None
     """Book description (optional)"""
@@ -88,16 +36,16 @@ class BookMeta:
     """Publisher name (optional)"""
 
     isbn: str | None = None
-    """ISBN (optional, defaults to generated UUID)"""
+    """ISBN (optional)"""
 
     authors: list[str] = field(default_factory=list)
-    """List of authors (optional)"""
+    """Authors (optional)"""
 
     editors: list[str] = field(default_factory=list)
-    """List of editors (optional)"""
+    """Editors (optional)"""
 
     translators: list[str] = field(default_factory=list)
-    """List of translators (optional)"""
+    """Translators (optional)"""
 
 
 # ============================================================================
@@ -106,29 +54,7 @@ class BookMeta:
 
 @dataclass
 class TocItem:
-    """
-    A table of contents item with title, content, and optional nested children.
-
-    Origin: Combines toc.json entries with chapter files
-    - title: from "headline" field
-    - get_chapter: lazy getter for chapter file content
-    - children: from "children" array (recursive)
-
-    Original structure in toc.json:
-    {
-      "id": integer,           // Used to map to chapter file, removed in dataclass
-      "headline": "string",    // Mapped to TocItem.title
-      "children": [...]        // Mapped to TocItem.children (recursive)
-    }
-
-    The id field is removed because we now use lazy getters for Chapter objects
-    instead of referencing them via id mapping.
-
-    A TocItem without get_chapter but with children serves as a section heading.
-
-    Note: Using getter functions enables lazy loading - chapters are only loaded
-    from disk when accessed, reducing memory usage for large books.
-    """
+    """Table of contents item with title, content, and optional nested children."""
     title: str
     """Chapter title displayed in table of contents"""
 
@@ -138,21 +64,9 @@ class TocItem:
     children: "list[TocItem]" = field(default_factory=list)
     """Nested sub-chapters (recursive, optional)"""
 
-
-# ============================================================================
-# Chapter Content Blocks
-# ============================================================================
-
 @dataclass
 class Headline:
-    """
-    Chapter heading.
-
-    Origin: <headline> tag
-    Example: <headline>Chapter Title<mark id="1"/></headline>
-
-    Renders as <h1> in HTML.
-    """
+    """Chapter heading."""
     text: str
     """Text content"""
 
@@ -162,14 +76,7 @@ class Headline:
 
 @dataclass
 class Text:
-    """
-    Regular paragraph.
-
-    Origin: <text> tag
-    Example: <text>Paragraph content<mark id="1"/></text>
-
-    Renders as <p> in HTML.
-    """
+    """Regular paragraph."""
     text: str
     """Text content"""
 
@@ -179,14 +86,7 @@ class Text:
 
 @dataclass
 class Quote:
-    """
-    Quoted text.
-
-    Origin: <quote> tag
-    Example: <quote>Quoted text<mark id="1"/></quote>
-
-    Renders as <blockquote><p> in HTML.
-    """
+    """Quoted text."""
     text: str
     """Text content"""
 
@@ -196,55 +96,21 @@ class Quote:
 
 @dataclass
 class Table:
-    """
-    HTML table.
-
-    Origin: <table> tag with nested <html> child
-    Example:
-    <table>
-      <html>
-        <table>
-          <tr><td>...</td></tr>
-        </table>
-      </html>
-    </table>
-
-    Contains complete HTML table markup as a string.
-    Rendering behavior depends on the table_render parameter.
-    """
+    """HTML table."""
     html_content: str
     """HTML table markup"""
 
 
 @dataclass
 class Formula:
-    """
-    Mathematical formula.
-
-    Origin: <formula> tag
-    Example: <formula>E = mc^2</formula>
-
-    Contains LaTeX expression as a string.
-    Rendering behavior depends on the latex_render parameter:
-    - MATHML: converts to MathML
-    - SVG: renders to SVG image
-    - CLIPPING: skipped
-    """
+    """Mathematical formula."""
     latex_expression: str
     """LaTeX expression"""
 
 
 @dataclass
 class Image:
-    """
-    Image reference.
-
-    Origin: <image> tag
-    Example: <image hash="abc123def456">Image description</image>
-
-    In the original format, hash maps to assets/<hash>.png.
-    In this dataclass, we use absolute path directly instead.
-    """
+    """Image reference."""
     path: Path
     """Absolute path to the image file"""
 
@@ -254,86 +120,34 @@ class Image:
 
 @dataclass
 class Footnote:
-    """
-    Footnote/citation section.
-
-    Origin: <footnote> tag
-    Example:
-    <footnote id="1">
-      <mark/>
-      <text>Footnote content</text>
-    </footnote>
-
-    Must contain a <mark/> indicator (without id) to show where the footnote
-    reference appears in the rendered output. Can contain any content blocks
-    except other footnotes.
-
-    Creates bidirectional links with Marks in the main content:
-    - Mark with id="N" links to Footnote with id="N"
-    - Footnote creates a back-reference link to the Mark
-    """
+    """Footnote/citation section."""
     id: int
     """Footnote ID"""
 
     has_mark: bool = True
-    """Whether this footnote contains a <mark/> indicator (required, defaults to True)"""
+    """Whether this footnote contains a mark indicator (defaults to True)"""
 
     contents: "list[ContentBlock]" = field(default_factory=list)
-    """Content blocks (excluding the <mark/> indicator)"""
+    """Content blocks"""
 
 
 @dataclass
 class Mark:
-    """
-    Citation reference marker.
-
-    Origin: <mark> tag
-    Example: <mark id="1"/> (inline in text/quote/headline)
-
-    Appears inline within text content to mark citation points.
-    Links to a corresponding Footnote with the same id.
-    Renders as a superscript link [N] in HTML.
-    """
+    """Citation reference marker."""
     id: int
     """Citation ID, matches Footnote.id"""
 
 
 ContentBlock = Headline | Text | Quote | Table | Formula | Image
-"""
-Union of all content blocks that appear in main chapter content.
-Note: Footnote is excluded as it's stored separately in Chapter.footnotes
-"""
-
-
-# ============================================================================
-# Chapter Content
-# ============================================================================
+"""Union of all content blocks that appear in main chapter content."""
 
 @dataclass
 class Chapter:
-    """
-    Complete content of a single chapter.
-
-    Origin: chapter files (chapter_<id>.xml or chapter.xml for head)
-
-    Original structure:
-    <chapter>
-      <headline>...</headline>
-      <text>...</text>
-      <quote>...</quote>
-      <table>...</table>
-      <formula>...</formula>
-      <image>...</image>
-      <footnote>...</footnote>
-    </chapter>
-
-    Note: Footnotes are rendered separately at the bottom of the chapter
-    with a "References" heading, not mixed with main content.
-    """
+    """Complete content of a single chapter."""
     elements: list[ContentBlock] = field(default_factory=list)
-    """Main content blocks (headline, text, quote, table, formula, image)"""
+    """Main content blocks"""
 
     footnotes: list[Footnote] = field(default_factory=list)
-    """Footnotes rendered at bottom with "References" heading"""
+    """Footnotes"""
 
 ChapterGetter = Callable[[], Chapter]

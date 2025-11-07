@@ -18,13 +18,11 @@ class Context:
         table_render: TableRender,
         latex_render: LaTeXRender,
     ) -> None:
-
         self._file: ZipFile = file
         self._template: Template = template
         self._table_render: TableRender = table_render
         self._latex_render: LaTeXRender = latex_render
         self._used_file_names: dict[str, str] = {}
-        # Map archive name to source file path
         self._asset_file_paths: dict[str, Path] = {}
 
     @property

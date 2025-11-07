@@ -19,15 +19,6 @@ def generate_epub(
     table_render: TableRender = TableRender.HTML,
     latex_render: LaTeXRender = LaTeXRender.MATHML,
 ) -> None:
-    """Generate EPUB file from EpubData dataclass.
-
-    Args:
-        epub_data: EpubData containing all book information
-        epub_file_path: Path where the EPUB file will be created
-        lan: Language for i18n ("zh" or "en")
-        table_render: How to render tables (HTML or SVG)
-        latex_render: How to render LaTeX formulas (MATHML or SVG)
-    """
     i18n = I18N(lan)
     template = Template()
     epub_file_path = Path(epub_file_path)
@@ -80,15 +71,11 @@ def _write_assets_from_data(
     i18n: I18N,
     epub_data: EpubData,
 ):
-    """Write assets (CSS, cover, images) from EpubData."""
     context.file.writestr(
         zinfo_or_arcname="OEBPS/styles/style.css",
         data=context.template.render("style.css").encode("utf-8"),
     )
-
-    has_cover = epub_data.cover_image_path is not None
-
-    if has_cover:
+    if epub_data.cover_image_path:
         context.file.writestr(
             zinfo_or_arcname="OEBPS/Text/cover.xhtml",
             data=context.template.render(
@@ -96,13 +83,12 @@ def _write_assets_from_data(
                 i18n=i18n,
             ).encode("utf-8"),
         )
-    if has_cover and epub_data.cover_image_path:
-        context.file.write(
-            filename=epub_data.cover_image_path,
-            arcname="OEBPS/assets/cover.png",
-        )
+        if epub_data.cover_image_path:
+            context.file.write(
+                filename=epub_data.cover_image_path,
+                arcname="OEBPS/assets/cover.png",
+            )
     context.add_used_asset_files()
-
 
 def _write_chapters_from_data(
     context: Context,
@@ -110,7 +96,6 @@ def _write_chapters_from_data(
     nav_points: list[NavPoint],
     epub_data: EpubData,
 ):
-    """Write chapter XHTML files from EpubData."""
     if epub_data.get_head is not None:
         chapter = epub_data.get_head()
         data = generate_chapter(context, chapter, i18n)
@@ -127,7 +112,6 @@ def _write_chapters_from_data(
                 zinfo_or_arcname="OEBPS/Text/" + nav_point.file_name,
                 data=data.encode("utf-8"),
             )
-
 
 def _write_basic_files(
     context: Context,

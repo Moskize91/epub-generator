@@ -20,26 +20,13 @@ _MEDIA_TYPE_MAP = {
 }
 
 def process_table(context: Context, table: Table) -> Element | None:
-    """Process Table dataclass to HTML elements.
-
-    Args:
-        context: Context with render settings
-        table: Table dataclass with html_content
-
-    Returns:
-        Wrapper div Element with table HTML, or None if clipped
-    """
     if context.table_render == TableRender.CLIPPING:
         return None
-
-    # Parse HTML table content
     try:
-        # Wrap in a container to ensure valid XML parsing
         wrapped_html = f"<div>{table.html_content}</div>"
         parsed = fromstring(wrapped_html)
-
         wrapper = Element("div", attrib={"class": "alt-wrapper"})
-        # Add all children from the parsed HTML
+
         for child in parsed:
             wrapper.append(child)
 
@@ -49,15 +36,6 @@ def process_table(context: Context, table: Table) -> Element | None:
 
 
 def process_formula(context: Context, formula: Formula) -> Element | None:
-    """Process Formula dataclass to MathML or SVG image.
-
-    Args:
-        context: Context with render settings and asset management
-        formula: Formula dataclass with latex_expression
-
-    Returns:
-        Element (MathML or img), or None if clipped/failed
-    """
     if context.latex_render == LaTeXRender.CLIPPING:
         return None
 
@@ -87,32 +65,17 @@ def process_formula(context: Context, formula: Formula) -> Element | None:
     return None
 
 def process_image(context: Context, image: Image) -> Element | None:
-    """Process Image dataclass to <img> element.
-
-    Args:
-        context: Context with asset management
-        image: Image dataclass with path and alt_text
-
-    Returns:
-        Wrapper div Element with img, or None if file not found
-    """
     if not image.path.exists():
         raise FileNotFoundError(f"Image file not found: {image.path}")
 
-    # Calculate hash from file content
     with open(image.path, "rb") as f:
         file_hash = sha256_hash(f.read())
 
-    # Determine file extension and media type
     file_ext = image.path.suffix or ".png"
     file_name = f"{file_hash}{file_ext}"
-
     media_type = _MEDIA_TYPE_MAP.get(file_ext.lower(), "image/png")
-
-    # Register asset for later writing
     context.use_asset(file_name, media_type, image.path)
 
-    # Create img element
     img_element = Element("img")
     img_element.set("src", f"../assets/{file_name}")
     img_element.set("alt", image.alt_text)
@@ -126,14 +89,6 @@ _ESCAPE_UNICODE_PATTERN = re.compile(r"&#x([0-9A-Fa-f]{5});")
 
 
 def _latex2mathml(latex: str) -> None | Element:
-    """Convert LaTeX expression to MathML Element.
-
-    Args:
-        latex: LaTeX expression string
-
-    Returns:
-        MathML Element, or None if conversion failed
-    """
     try:
         html_latex = convert(latex)
     except Exception:
@@ -163,15 +118,6 @@ def _latex2mathml(latex: str) -> None | Element:
 
 
 def _latex_formula2svg(latex: str, font_size: int = 12):
-    """Convert LaTeX formula to SVG image bytes.
-
-    Args:
-        latex: LaTeX expression string
-        font_size: Font size for rendering
-
-    Returns:
-        SVG image as bytes, or None if rendering failed
-    """
     # from https://www.cnblogs.com/qizhou/p/18170083
     try:
         output = io.BytesIO()
@@ -196,14 +142,6 @@ def _latex_formula2svg(latex: str, font_size: int = 12):
 
 
 def _normalize_expression(expression: str) -> str:
-    """Normalize LaTeX expression by removing newlines and whitespace.
-
-    Args:
-        expression: Raw LaTeX expression
-
-    Returns:
-        Normalized expression string
-    """
     expression = expression.replace("\n", "")
     expression = expression.strip()
     return expression

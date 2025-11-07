@@ -11,7 +11,6 @@ from .types import BookMeta, EpubData, TocItem
 
 @dataclass
 class NavPoint:
-    """Navigation point for EPUB table of contents."""
     toc_id: int
     file_name: str
     order: int
@@ -23,16 +22,6 @@ def gen_toc(
     i18n: I18N,
     epub_data: EpubData,
 ) -> tuple[str, list[NavPoint]]:
-    """Generate table of contents from EpubData.
-
-    Args:
-        template: Template renderer
-        i18n: Internationalization
-        epub_data: EpubData object
-
-    Returns:
-        Tuple of (toc_ncx string, list of NavPoint objects)
-    """
     meta: BookMeta | None = epub_data.meta
     has_cover = epub_data.cover_image_path is not None
     prefaces = epub_data.prefaces
@@ -45,8 +34,6 @@ def gen_toc(
             _count_toc_items(chapters)
         ),
     )
-
-    # Generate nav point XML strings directly from TocItems
     nav_xml_strings = []
     for chapters_list in (prefaces, chapters):
         for toc_item in chapters_list:
@@ -72,7 +59,6 @@ def gen_toc(
 
 
 def _count_toc_items(items: list[TocItem]) -> int:
-    """Count total number of TocItem objects including nested children."""
     count: int = 0
     for item in items:
         count += 1 + _count_toc_items(item.children)
@@ -80,7 +66,6 @@ def _count_toc_items(items: list[TocItem]) -> int:
 
 
 def _max_depth_toc_items(items: list[TocItem]) -> int:
-    """Calculate maximum depth of TocItem tree."""
     max_depth: int = 0
     for item in items:
         max_depth = max(
@@ -91,8 +76,6 @@ def _max_depth_toc_items(items: list[TocItem]) -> int:
 
 
 class _NavPointGenerator:
-    """Generate navigation points and XML strings from TocItems."""
-
     def __init__(self, has_cover: bool, chapters_count: int):
         self._nav_points: list[NavPoint] = []
         self._next_order: int = 2 if has_cover else 1
@@ -104,29 +87,11 @@ class _NavPointGenerator:
         return self._nav_points
 
     def generate(self, toc_item: TocItem) -> str:
-        """Generate navPoint XML string from TocItem.
-
-        Args:
-            toc_item: TocItem with title, chapter, and children
-
-        Returns:
-            XML string for navPoint element
-        """
         _, xml_string = self._create_nav_point(toc_item)
         return xml_string
 
     def _create_nav_point(self, toc_item: TocItem) -> tuple[NavPoint, str]:
-        """Create NavPoint and its XML representation.
-
-        Args:
-            toc_item: TocItem to process
-
-        Returns:
-            Tuple of (NavPoint, XML string)
-        """
         nav_point: NavPoint | None = None
-
-        # If this TocItem has a chapter, create a NavPoint
         if toc_item.get_chapter is not None:
             toc_id = self._next_id
             self._next_id += 1
@@ -140,21 +105,17 @@ class _NavPointGenerator:
             self._nav_points.append(nav_point)
             self._next_order += 1
 
-        # Process children recursively
         children_xml = []
         for child in toc_item.children:
             child_nav_point, child_xml = self._create_nav_point(child)
             children_xml.append(child_xml)
-            # If this item has no chapter, use child's navpoint
             if nav_point is None:
                 nav_point = child_nav_point
 
         assert nav_point is not None, "TocItem has no chapter and no valid children"
 
-        # Build XML string directly
         title_escaped = escape(toc_item.title)
         children_xml_str = "\n        ".join(children_xml)
-
         xml_parts = [
             f'<navPoint id="np_{nav_point.toc_id}" playOrder="{nav_point.order}">',
             "    <navLabel>",
@@ -162,7 +123,6 @@ class _NavPointGenerator:
             "    </navLabel>",
             f'    <content src="Text/{nav_point.file_name}" />',
         ]
-
         if children_xml:
             xml_parts.append("    " + children_xml_str)
 
