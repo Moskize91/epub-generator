@@ -5,6 +5,7 @@
         "mathml",
         "matplotlib",
         "OEBPS",
+        "oomol",
         "pylint",
         "zinfo"
     ],
