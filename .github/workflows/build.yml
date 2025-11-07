@@ -1,4 +1,4 @@
-name: Lint
+name: Build
 on:
   pull_request:
     branches:
@@ -8,7 +8,7 @@ on:
       - "main"
 
 jobs:
-  lint:
+  build:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
