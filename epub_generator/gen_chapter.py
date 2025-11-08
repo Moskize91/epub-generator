@@ -1,5 +1,5 @@
 from typing import Generator
-from xml.etree.ElementTree import Element, register_namespace, tostring
+from xml.etree.ElementTree import Element
 
 from .context import Context
 from .gen_asset import process_formula, process_image, process_table
@@ -14,9 +14,7 @@ from .types import (
     Text,
     TextKind,
 )
-
-# Register epub namespace for proper serialization
-register_namespace("epub", "http://www.idpf.org/2007/ops")
+from .xml_utils import serialize_element, set_epub_type
 
 
 def generate_chapter(
@@ -28,11 +26,11 @@ def generate_chapter(
         template="part.xhtml",
         i18n=i18n,
         content=[
-            tostring(child, encoding="unicode")
+            serialize_element(child)
             for child in _render_contents(context, chapter)
         ],
         citations=[
-            tostring(child, encoding="unicode")
+            serialize_element(child)
             for child in _render_footnotes(context, chapter)
         ],
     )
@@ -60,8 +58,7 @@ def _render_footnotes(
             "id": f"fn-{footnote.id}",
             "class": "footnote",
         }
-        # Use Clark notation for epub:type namespace
-        citation_aside.set("{http://www.idpf.org/2007/ops}type", "footnote")
+        set_epub_type(citation_aside, "footnote")
 
         for block in footnote.contents:
             layout = _render_content_block(context, block)
@@ -146,8 +143,8 @@ def _render_text_content(parent: Element, content: list[str | Mark]) -> None:
                 "href": f"#fn-{item.id}",
                 "class": "super",
             }
-            # Use Clark notation for epub:type namespace
-            anchor.set("{http://www.idpf.org/2007/ops}type", "noteref")
+            # Set epub:type using utility function (avoids global namespace pollution)
+            set_epub_type(anchor, "noteref")
             anchor.text = f"[{item.id}]"
             parent.append(anchor)
             current_element = anchor
