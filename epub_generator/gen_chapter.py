@@ -8,11 +8,11 @@ from .types import (
     Chapter,
     ContentBlock,
     Formula,
-    Headline,
     Image,
-    Quote,
+    Mark,
     Table,
     Text,
+    TextKind,
 )
 
 
@@ -81,25 +81,24 @@ def _render_footnotes(
 
 
 def _render_content_block(context: Context, block: ContentBlock) -> Element | None:
-    if isinstance(block, Headline):
-        h1 = Element("h1")
-        h1.text = block.text
-        _add_marks(h1, block.marks)
-        return h1
+    if isinstance(block, Text):
+        if block.kind == TextKind.HEADLINE:
+            container = Element("h1")
+        elif block.kind == TextKind.QUOTE:
+            container = Element("p")
+        elif block.kind == TextKind.BODY:
+            container = Element("p")
+        else:
+            raise ValueError(f"Unknown TextKind: {block.kind}")
 
-    elif isinstance(block, Text):
-        p = Element("p")
-        p.text = block.text
-        _add_marks(p, block.marks)
-        return p
+        _render_text_content(container, block.content)
 
-    elif isinstance(block, Quote):
-        p = Element("p")
-        p.text = block.text
-        _add_marks(p, block.marks)
-        blockquote = Element("blockquote")
-        blockquote.append(p)
-        return blockquote
+        if block.kind == TextKind.QUOTE:
+            blockquote = Element("blockquote")
+            blockquote.append(container)
+            return blockquote
+
+        return container
 
     elif isinstance(block, Table):
         return process_table(context, block)
@@ -114,13 +113,28 @@ def _render_content_block(context: Context, block: ContentBlock) -> Element | No
         return None
 
 
-def _add_marks(parent: Element, marks: list) -> None:
-    for mark in marks:
-        anchor = Element("a")
-        anchor.attrib = {
-            "id": f"ref-{mark.id}",
-            "href": f"#mark-{mark.id}",
-            "class": "super",
-        }
-        anchor.text = f"[{mark.id}]"
-        parent.append(anchor)
+def _render_text_content(parent: Element, content: list[str | Mark]) -> None:
+    """Render text content with inline citation marks."""
+    current_element = parent
+    for item in content:
+        if isinstance(item, str):
+            if current_element is parent:
+                if parent.text is None:
+                    parent.text = item
+                else:
+                    parent.text += item
+            else:
+                if current_element.tail is None:
+                    current_element.tail = item
+                else:
+                    current_element.tail += item
+        elif isinstance(item, Mark):
+            anchor = Element("a")
+            anchor.attrib = {
+                "id": f"ref-{item.id}",
+                "href": f"#mark-{item.id}",
+                "class": "super",
+            }
+            anchor.text = f"[{item.id}]"
+            parent.append(anchor)
+            current_element = anchor

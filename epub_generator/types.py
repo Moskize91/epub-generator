@@ -1,4 +1,5 @@
 from dataclasses import dataclass, field
+from enum import Enum
 from pathlib import Path
 from typing import Callable
 
@@ -64,36 +65,27 @@ class TocItem:
     children: "list[TocItem]" = field(default_factory=list)
     """Nested sub-chapters (recursive, optional)"""
 
-@dataclass
-class Headline:
+class TextKind(Enum):
+    BODY = "body"
+    """Regular paragraph."""
+    HEADLINE = "headline"
     """Chapter heading."""
-    text: str
-    """Text content"""
+    QUOTE = "quote"
+    """Quoted text."""
 
-    marks: "list[Mark]" = field(default_factory=list)
-    """Citation markers (optional)"""
-
+@dataclass
+class Mark:
+    """Citation reference marker."""
+    id: int
+    """Citation ID, matches Footnote.id"""
 
 @dataclass
 class Text:
-    """Regular paragraph."""
-    text: str
-    """Text content"""
-
-    marks: "list[Mark]" = field(default_factory=list)
-    """Citation markers (optional)"""
-
-
-@dataclass
-class Quote:
-    """Quoted text."""
-    text: str
-    """Text content"""
-
-    marks: "list[Mark]" = field(default_factory=list)
-    """Citation markers (optional)"""
-
-
+    kind: TextKind
+    """Kind of text block."""
+    content: list[str | Mark]
+    """Text content with optional citation marks."""
+    
 @dataclass
 class Table:
     """HTML table."""
@@ -131,14 +123,7 @@ class Footnote:
     """Content blocks"""
 
 
-@dataclass
-class Mark:
-    """Citation reference marker."""
-    id: int
-    """Citation ID, matches Footnote.id"""
-
-
-ContentBlock = Headline | Text | Quote | Table | Formula | Image
+ContentBlock = Text | Table | Formula | Image
 """Union of all content blocks that appear in main chapter content."""
 
 @dataclass
