@@ -1,6 +1,14 @@
-# epub-generator
-
-A simple Python EPUB 3.0 generator with a single API call.
+<div align="center">
+  <h1>EPUB Generator</h1>
+  <p>A simple Python EPUB 3.0 generator with a single API call.</p>
+  <p>
+    <a href="https://github.com/moskize91/epub-generator/actions/workflows/build.yml" target="_blank"><img src="https://img.shields.io/github/actions/workflow/status/moskize91/epub-generator/build.yml" alt="ci" /></a>
+    <a href="https://pypi.org/project/epub-generator/" target="_blank"><img src="https://img.shields.io/badge/pip_install-epub--generator-blue" alt="pip install epub-generator" /></a>
+    <a href="https://pypi.org/project/epub-generator/" target="_blank"><img src="https://img.shields.io/pypi/v/epub-generator.svg" alt="pypi epub-generator" /></a>
+    <a href="https://pypi.org/project/epub-generator/" target="_blank"><img src="https://img.shields.io/pypi/pyversions/epub-generator.svg" alt="python versions" /></a>
+    <a href="https://github.com/moskize91/epub-generator/blob/main/LICENSE" target="_blank"><img src="https://img.shields.io/github/license/moskize91/epub-generator" alt="license" /></a>
+  </p>
+</div>
 
 ## Quick Start
 
