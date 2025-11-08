@@ -1,9 +1,11 @@
 {
     "cSpell.words": [
         "arcname",
+        "autopep",
         "dcterms",
         "epub",
         "epubcheck",
+        "isort",
         "mathml",
         "matplotlib",
         "noteref",
