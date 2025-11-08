@@ -27,6 +27,17 @@ jobs:
       - name: Install dependencies
         run: poetry install --with dev
 
+      - name: Install epubcheck
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y wget default-jre
+          wget https://github.com/w3c/epubcheck/releases/download/v5.2.1/epubcheck-5.2.1.zip
+          unzip epubcheck-5.2.1.zip
+          sudo mv epubcheck-5.2.1 /opt/epubcheck
+          echo '#!/bin/bash' | sudo tee /usr/local/bin/epubcheck
+          echo 'java -jar /opt/epubcheck/epubcheck.jar "$@"' | sudo tee -a /usr/local/bin/epubcheck
+          sudo chmod +x /usr/local/bin/epubcheck
+
       - name: Run pylint
         run: bash scripts/lint.sh
 
