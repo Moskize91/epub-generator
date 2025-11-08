@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from dataclasses import dataclass
 from typing import Any, Callable
 
@@ -18,7 +16,6 @@ def gen_toc(
     epub_data: EpubData,
     has_cover: bool = False,
 ) -> list[NavPoint]:
-    """Generate navigation points from EPUB data for EPUB 3.0."""
     prefaces = epub_data.prefaces
     chapters = epub_data.chapters
 
@@ -65,11 +62,9 @@ class _NavPointGenerator:
         return self._nav_points
 
     def generate(self, toc_item: TocItem) -> None:
-        """Process a TocItem and generate NavPoints."""
         self._create_nav_point(toc_item)
 
     def _create_nav_point(self, toc_item: TocItem) -> NavPoint:
-        """Recursively create navigation points from TocItem."""
         nav_point: NavPoint | None = None
         if toc_item.get_chapter is not None:
             toc_id = self._next_id

@@ -1,4 +1,3 @@
-"""Generate EPUB 3.0 navigation document (nav.xhtml)."""
 from html import escape
 
 from .context import Template
@@ -14,28 +13,10 @@ def gen_nav(
     nav_points: list[NavPoint],
     has_cover: bool = False,
 ) -> str:
-    """Generate EPUB 3.0 navigation document (nav.xhtml).
-
-    Args:
-        template: Template engine
-        i18n: Internationalization instance
-        epub_data: Complete EPUB data
-        nav_points: List of navigation points
-        has_cover: Whether the book has a cover image
-
-    Returns:
-        Navigation document HTML string
-    """
     meta: BookMeta | None = epub_data.meta
     has_head_chapter = epub_data.get_head is not None
-
-    # Generate TOC list HTML
     toc_list = _generate_toc_list(epub_data.prefaces, epub_data.chapters, nav_points)
-
-    # Get first chapter file for landmarks
     first_chapter_file = nav_points[0].file_name if nav_points else None
-
-    # Determine head chapter title
     head_chapter_title = ""
     if has_head_chapter and epub_data.get_head:
         # Try to extract title from first heading if available
@@ -58,17 +39,6 @@ def _generate_toc_list(
     chapters: list[TocItem],
     nav_points: list[NavPoint],
 ) -> str:
-    """Generate nested HTML list for table of contents.
-
-    Args:
-        prefaces: List of preface TOC items
-        chapters: List of main chapter TOC items
-        nav_points: List of navigation points with file names
-
-    Returns:
-        HTML string with nested <li> elements
-    """
-    # Create a mapping from TocItem to NavPoint for quick lookup
     nav_point_index = 0
 
     html_parts = []
@@ -87,25 +57,12 @@ def _generate_toc_item(
     nav_points: list[NavPoint],
     nav_point_index: int,
 ) -> tuple[int, str]:
-    """Generate HTML for a single TOC item and its children.
-
-    Args:
-        toc_item: Table of contents item
-        nav_points: List of all navigation points
-        nav_point_index: Current index in nav_points list
-
-    Returns:
-        Tuple of (next_nav_point_index, html_string)
-    """
     title_escaped = escape(toc_item.title)
-
-    # Get file name if this item has a chapter
     file_name = None
     if toc_item.get_chapter is not None and nav_point_index < len(nav_points):
         file_name = nav_points[nav_point_index].file_name
         nav_point_index += 1
 
-    # Process children
     children_html = []
     for child in toc_item.children:
         nav_point_index, child_html = _generate_toc_item(
@@ -113,17 +70,13 @@ def _generate_toc_item(
         )
         children_html.append(child_html)
 
-    # If no file name, use the first child's file name
     if file_name is None and children_html:
-        # Find the nav point for first child
         if nav_point_index > 0:
-            # Navigate back to find appropriate file
             for i in range(nav_point_index - len(toc_item.children), nav_point_index):
                 if i < len(nav_points):
                     file_name = nav_points[i].file_name
                     break
 
-    # Build HTML
     if file_name:
         html_parts = [f'      <li>\n        <a href="Text/{file_name}">{title_escaped}</a>']
     else:

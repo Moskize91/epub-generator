@@ -21,15 +21,6 @@ def generate_epub(
     table_render: TableRender = TableRender.HTML,
     latex_render: LaTeXRender = LaTeXRender.MATHML,
 ) -> None:
-    """Generate EPUB 3.0 file from EpubData.
-
-    Args:
-        epub_data: Complete EPUB book data
-        epub_file_path: Output EPUB file path
-        lan: Language code ("zh" or "en")
-        table_render: Table rendering option
-        latex_render: LaTeX/MathML rendering option
-    """
     i18n = I18N(lan)
     template = Template()
     epub_file_path = Path(epub_file_path)
@@ -47,14 +38,10 @@ def generate_epub(
             table_render=table_render,
             latex_render=latex_render,
         )
-
-        # Write mimetype (must be first and uncompressed)
         file.writestr(
             zinfo_or_arcname="mimetype",
             data=template.render("mimetype").encode("utf-8"),
         )
-
-        # Write chapters and detect MathML
         _write_chapters_from_data(
             context=context,
             i18n=i18n,
@@ -62,8 +49,6 @@ def generate_epub(
             epub_data=epub_data,
             latex_render=latex_render,
         )
-
-        # Generate and write navigation document (EPUB 3.0)
         nav_xhtml = gen_nav(
             template=template,
             i18n=i18n,
@@ -75,22 +60,17 @@ def generate_epub(
             zinfo_or_arcname="OEBPS/nav.xhtml",
             data=nav_xhtml.encode("utf-8"),
         )
-
-        # Write content.opf and other basic files
         _write_basic_files(
             context=context,
             i18n=i18n,
             epub_data=epub_data,
             nav_points=nav_points,
         )
-
-        # Write assets (CSS, cover, etc.)
         _write_assets_from_data(
             context=context,
             i18n=i18n,
             epub_data=epub_data,
         )
-
 
 def _write_assets_from_data(
     context: Context,
@@ -130,7 +110,6 @@ def _write_chapters_from_data(
             zinfo_or_arcname="OEBPS/Text/head.xhtml",
             data=data.encode("utf-8"),
         )
-        # Mark if contains MathML
         if latex_render == LaTeXRender.MATHML and _chapter_has_formula(chapter):
             context.mark_chapter_has_mathml("head.xhtml")
 
@@ -142,7 +121,6 @@ def _write_chapters_from_data(
                 zinfo_or_arcname="OEBPS/Text/" + nav_point.file_name,
                 data=data.encode("utf-8"),
             )
-            # Mark if contains MathML
             if latex_render == LaTeXRender.MATHML and _chapter_has_formula(chapter):
                 context.mark_chapter_has_mathml(nav_point.file_name)
 
@@ -167,29 +145,21 @@ def _write_basic_files(
     has_cover = epub_data.cover_image_path is not None
     has_head_chapter = epub_data.get_head is not None
 
-    # Write container.xml
     context.file.writestr(
         zinfo_or_arcname="META-INF/container.xml",
         data=context.template.render("container.xml").encode("utf-8"),
     )
-
-    # Generate ISBN or UUID
     isbn = (meta.isbn if meta else None) or str(uuid4())
-
-    # Generate dcterms:modified timestamp (EPUB 3.0 requirement)
     if meta and meta.modified:
         modified_timestamp = meta.modified.strftime("%Y-%m-%dT%H:%M:%SZ")
     else:
         modified_timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
-    # Get list of chapters with MathML for properties attribute
     chapters_with_mathml = {
         nav_point.file_name
         for nav_point in nav_points
         if context.chapter_has_mathml(nav_point.file_name)
     }
-
-    # Render content.opf
     content = context.template.render(
         template="content.opf",
         meta=meta,
