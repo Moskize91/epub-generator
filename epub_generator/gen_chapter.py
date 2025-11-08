@@ -59,7 +59,6 @@ def _render_footnotes(
         citation_aside.attrib = {
             "id": f"fn-{footnote.id}",
             "class": "footnote",
-            "role": "doc-footnote",
         }
         # Use Clark notation for epub:type namespace
         citation_aside.set("{http://www.idpf.org/2007/ops}type", "footnote")
@@ -77,7 +76,6 @@ def _render_footnotes(
         ref.text = f"[{footnote.id}]"
         ref.attrib = {
             "href": f"#ref-{footnote.id}",
-            "role": "doc-backlink",
         }
         first_layout = citation_aside[0]
         if first_layout.tag == "p":
@@ -147,7 +145,6 @@ def _render_text_content(parent: Element, content: list[str | Mark]) -> None:
                 "id": f"ref-{item.id}",
                 "href": f"#fn-{item.id}",
                 "class": "super",
-                "role": "doc-noteref",
             }
             # Use Clark notation for epub:type namespace
             anchor.set("{http://www.idpf.org/2007/ops}type", "noteref")

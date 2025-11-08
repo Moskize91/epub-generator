@@ -24,7 +24,7 @@
     </ol>
   </nav>
 
-  <nav epub:type="landmarks" id="landmarks" role="doc-landmarks" hidden="hidden">
+  <nav epub:type="landmarks" id="landmarks" hidden="hidden">
     <h2>{{ i18n.landmarks }}</h2>
     <ol>
 {% if has_cover %}
@@ -32,9 +32,6 @@
         <a epub:type="cover" href="Text/cover.xhtml">{{ i18n.cover }}</a>
       </li>
 {% endif %}
-      <li>
-        <a epub:type="toc" href="nav.xhtml">{{ i18n.table_of_contents }}</a>
-      </li>
 {% if first_chapter_file %}
       <li>
         <a epub:type="bodymatter" href="Text/{{ first_chapter_file }}">{{ i18n.start_of_content }}</a>

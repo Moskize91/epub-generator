@@ -11,7 +11,7 @@ from .gen_nav import gen_nav
 from .gen_toc import NavPoint, gen_toc
 from .i18n import I18N
 from .options import LaTeXRender, TableRender
-from .types import BookMeta, EpubData
+from .types import EpubData
 
 
 def generate_epub(
