@@ -88,7 +88,6 @@ def _write_assets_from_data(
                 filename=epub_data.cover_image_path,
                 arcname="OEBPS/assets/cover.png",
             )
-    context.add_used_asset_files()
 
 def _write_chapters_from_data(
     context: Context,

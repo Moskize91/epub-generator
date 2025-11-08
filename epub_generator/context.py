@@ -1,3 +1,5 @@
+from dataclasses import dataclass
+from hashlib import sha256
 from importlib.resources import files
 from pathlib import Path
 from typing import cast
@@ -9,6 +11,12 @@ from jinja2 import Template as JinjaTemplate
 from .options import LaTeXRender, TableRender
 from .template import create_env
 
+
+@dataclass
+class _AssetNode:
+    file_name: str
+    media_type: str
+    content_hash: str
 
 class Context:
     def __init__(
@@ -22,8 +30,8 @@ class Context:
         self._template: Template = template
         self._table_render: TableRender = table_render
         self._latex_render: LaTeXRender = latex_render
-        self._used_file_names: dict[str, str] = {}
-        self._asset_file_paths: dict[str, Path] = {}
+        self._path_to_node: dict[Path, _AssetNode] = {}  # source_path -> node
+        self._hash_to_node: dict[str, _AssetNode] = {}  # content_hash -> node
 
     @property
     def file(self) -> ZipFile:
@@ -41,44 +49,65 @@ class Context:
     def latex_render(self) -> LaTeXRender:
         return self._latex_render
 
-    def use_asset(self, file_name: str, media_type: str, source_path: Path) -> None:
-        """Register an asset file for inclusion in the EPUB.
+    @property
+    def used_files(self) -> list[tuple[str, str]]:
+        nodes = list(self._hash_to_node.values())
+        nodes.sort(key=lambda node: node.file_name)
+        return [(node.file_name, node.media_type) for node in nodes]
 
-        Args:
-            file_name: The filename to use in the EPUB archive
-            media_type: The MIME type of the asset
-            source_path: Source file path
-        """
-        self._used_file_names[file_name] = media_type
-        self._asset_file_paths[file_name] = source_path
+    def use_asset(
+        self,
+        source_path: Path,
+        media_type: str,
+        file_ext: str,
+    ) -> str:
+        if source_path in self._path_to_node:
+            return self._path_to_node[source_path].file_name
 
-    def add_asset(self, file_name: str, media_type: str, data: bytes) -> None:
-        if file_name in self._used_file_names:
-            return
+        if not source_path.exists():
+            raise FileNotFoundError(f"Asset file not found: {source_path}")
 
-        self._used_file_names[file_name] = media_type
+        with open(source_path, "rb") as f:
+            content = f.read()
+        content_hash = _sha256_hash(content)
+
+        if content_hash in self._hash_to_node:
+            node = self._hash_to_node[content_hash]
+            self._path_to_node[source_path] = node
+            return node.file_name
+
+        file_name = f"{content_hash}{file_ext}"
+        node = _AssetNode(
+            file_name=file_name,
+            media_type=media_type,
+            content_hash=content_hash,
+        )
+        self._path_to_node[source_path] = node
+        self._hash_to_node[content_hash] = node
+        self._file.write(
+            filename=source_path,
+            arcname="OEBPS/assets/" + file_name,
+        )
+        return file_name
+
+    def add_asset(self, data: bytes, media_type: str, file_ext: str) -> str:
+        content_hash = _sha256_hash(data)
+        if content_hash in self._hash_to_node:
+            return self._hash_to_node[content_hash].file_name
+
+        file_name = f"{content_hash}{file_ext}"
+        node = _AssetNode(
+            file_name=file_name,
+            media_type=media_type,
+            content_hash=content_hash,
+        )
+        self._hash_to_node[content_hash] = node
+
         self._file.writestr(
             zinfo_or_arcname="OEBPS/assets/" + file_name,
             data=data,
         )
-
-    @property
-    def used_files(self) -> list[tuple[str, str]]:
-        used_files: list[tuple[str, str]] = []
-        for file_name in sorted(list(self._used_file_names.keys())):
-            media_type = self._used_file_names[file_name]
-            used_files.append((file_name, media_type))
-        return used_files
-
-    def add_used_asset_files(self) -> None:
-        """Write all registered asset files to the EPUB archive."""
-        for file_name, source_path in self._asset_file_paths.items():
-            if source_path.exists():
-                self._file.write(
-                    filename=source_path,
-                    arcname="OEBPS/assets/" + file_name,
-                )
-
+        return file_name
 
 class Template:
     def __init__(self):
@@ -96,3 +125,8 @@ class Template:
             template = self._env.get_template(name)
             self._templates[name] = template
         return template
+
+def _sha256_hash(data: bytes) -> str:
+    hash256 = sha256()
+    hash256.update(data)
+    return hash256.hexdigest()
