@@ -30,6 +30,9 @@ jobs:
       - name: Run pylint
         run: bash scripts/lint.sh
 
+      - name: Run tests
+        run: python test.py
+
       - name: Build package
         run: poetry build
 
