@@ -1,4 +1,5 @@
 from dataclasses import dataclass, field
+from datetime import datetime
 from enum import Enum
 from pathlib import Path
 from typing import Callable
@@ -47,6 +48,9 @@ class BookMeta:
 
     translators: list[str] = field(default_factory=list)
     """Translators (optional)"""
+
+    modified: datetime | None = None
+    """Last modification timestamp for EPUB 3.0 dcterms:modified (optional, defaults to current time)"""
 
 
 # ============================================================================

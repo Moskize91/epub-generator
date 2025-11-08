@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
-<package version="2.0" xmlns="http://www.idpf.org/2007/opf" unique-identifier="uid">
-  <metadata xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:opf="http://www.idpf.org/2007/opf">
-    <dc:language>zh</dc:language>
+<package version="3.0" xmlns="http://www.idpf.org/2007/opf" unique-identifier="uid" xml:lang="zh">
+  <metadata xmlns:dc="http://purl.org/dc/elements/1.1/">
     <dc:identifier id="uid">{{ ISBN }}</dc:identifier>
+    <dc:language>zh</dc:language>
 {% if meta and meta.title %}
     <dc:title>{{ meta.title }}</dc:title>
 {% else %}
@@ -16,43 +16,45 @@
 {% endif %}
 {% if meta and meta.authors %}
 {% for author in meta.authors %}
-    <dc:creator opf:role="aut">{{ author }}</dc:creator>
+    <dc:creator id="creator{{ loop.index }}">{{ author }}</dc:creator>
+    <meta refines="#creator{{ loop.index }}" property="role" scheme="marc:relators">aut</meta>
 {% endfor %}
 {% endif %}
 {% if meta and meta.editors %}
 {% for editor in meta.editors %}
-    <dc:creator opf:role="edt">{{ editor }}</dc:creator>
+    <dc:creator id="editor{{ loop.index }}">{{ editor }}</dc:creator>
+    <meta refines="#editor{{ loop.index }}" property="role" scheme="marc:relators">edt</meta>
 {% endfor %}
 {% endif %}
 {% if meta and meta.translators %}
 {% for translator in meta.translators %}
-    <dc:creator opf:role="trl">{{ translator }}</dc:creator>
+    <dc:creator id="translator{{ loop.index }}">{{ translator }}</dc:creator>
+    <meta refines="#translator{{ loop.index }}" property="role" scheme="marc:relators">trl</meta>
 {% endfor %}
 {% endif %}
+    <meta property="dcterms:modified">{{ modified_timestamp }}</meta>
 {% if has_cover %}
-    <meta name="cover" content="a_cover" />
+    <meta name="cover" content="cover-image" />
 {% endif %}
-    <meta name="output encoding" content="utf-8" />
-    <meta name="primary-writing-mode" content="horizontal-lr" />
   </metadata>
   <manifest>
+    <item id="nav" properties="nav" media-type="application/xhtml+xml" href="nav.xhtml" />
     <item id="a_css" media-type="text/css" href="styles/style.css" />
 {% for asset_file, media_type in asset_files %}
     <item id="a_{{ asset_file|safe }}" media-type="{{ media_type|safe }}" href="assets/{{ asset_file|safe }}" />
-{% endfor%}
+{% endfor %}
 {% if has_cover %}
-    <item id="a_cover" media-type="image/png" href="assets/cover.png" />
+    <item id="cover-image" properties="cover-image" media-type="image/png" href="assets/cover.png" />
     <item id="x_cover.xhtml" media-type="application/xhtml+xml" href="Text/cover.xhtml" />
 {% endif %}
 {% if has_head_chapter %}
     <item id="x_head.xhtml" media-type="application/xhtml+xml" href="Text/head.xhtml" />
 {% endif %}
 {% for nav_point in nav_points %}
-    <item id="x_{{ nav_point.file_name|safe }}" media-type="application/xhtml+xml" href="Text/{{ nav_point.file_name|safe }}" />
+    <item id="x_{{ nav_point.file_name|safe }}" media-type="application/xhtml+xml" href="Text/{{ nav_point.file_name|safe }}"{% if nav_point.file_name in chapters_with_mathml %} properties="mathml"{% endif %} />
 {% endfor %}
-    <item id="ncx" media-type="application/x-dtbncx+xml" href="toc.ncx" />
   </manifest>
-  <spine toc="ncx">
+  <spine>
 {% if has_cover %}
     <itemref idref="x_cover.xhtml" linear="no" />
 {% endif %}

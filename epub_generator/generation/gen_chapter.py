@@ -1,10 +1,9 @@
 from typing import Generator
-from xml.etree.ElementTree import Element, tostring
+from xml.etree.ElementTree import Element
 
-from .context import Context
-from .gen_asset import process_formula, process_image, process_table
-from .i18n import I18N
-from .types import (
+from ..context import Context
+from ..i18n import I18N
+from ..types import (
     Chapter,
     ContentBlock,
     Formula,
@@ -14,6 +13,8 @@ from .types import (
     Text,
     TextKind,
 )
+from .xml_utils import serialize_element, set_epub_type
+from .gen_asset import process_formula, process_image, process_table
 
 
 def generate_chapter(
@@ -25,11 +26,11 @@ def generate_chapter(
         template="part.xhtml",
         i18n=i18n,
         content=[
-            tostring(child, encoding="unicode")
+            serialize_element(child)
             for child in _render_contents(context, chapter)
         ],
         citations=[
-            tostring(child, encoding="unicode")
+            serialize_element(child)
             for child in _render_footnotes(context, chapter)
         ],
     )
@@ -51,23 +52,29 @@ def _render_footnotes(
         if not footnote.has_mark or not footnote.contents:
             continue
 
-        citation_div = Element("div", attrib={"class": "citation"})
+        # Use <aside> with EPUB 3.0 semantic attributes
+        citation_aside = Element("aside")
+        citation_aside.attrib = {
+            "id": f"fn-{footnote.id}",
+            "class": "footnote",
+        }
+        set_epub_type(citation_aside, "footnote")
+
         for block in footnote.contents:
             layout = _render_content_block(context, block)
             if layout is not None:
-                citation_div.append(layout)
+                citation_aside.append(layout)
 
-        if len(citation_div) == 0:
+        if len(citation_aside) == 0:
             continue
 
+        # Back-reference link with EPUB 3.0 attributes
         ref = Element("a")
         ref.text = f"[{footnote.id}]"
         ref.attrib = {
-            "id": f"mark-{footnote.id}",
             "href": f"#ref-{footnote.id}",
-            "class": "citation",
         }
-        first_layout = citation_div[0]
+        first_layout = citation_aside[0]
         if first_layout.tag == "p":
             ref.tail = first_layout.text
             first_layout.text = None
@@ -75,9 +82,9 @@ def _render_footnotes(
         else:
             inject_p = Element("p")
             inject_p.append(ref)
-            citation_div.insert(0, inject_p)
+            citation_aside.insert(0, inject_p)
 
-        yield citation_div
+        yield citation_aside
 
 
 def _render_content_block(context: Context, block: ContentBlock) -> Element | None:
@@ -129,12 +136,15 @@ def _render_text_content(parent: Element, content: list[str | Mark]) -> None:
                 else:
                     current_element.tail += item
         elif isinstance(item, Mark):
+            # EPUB 3.0 noteref with semantic attributes
             anchor = Element("a")
             anchor.attrib = {
                 "id": f"ref-{item.id}",
-                "href": f"#mark-{item.id}",
+                "href": f"#fn-{item.id}",
                 "class": "super",
             }
+            # Set epub:type using utility function (avoids global namespace pollution)
+            set_epub_type(anchor, "noteref")
             anchor.text = f"[{item.id}]"
             parent.append(anchor)
             current_element = anchor

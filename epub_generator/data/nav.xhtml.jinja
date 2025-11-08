@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:epub="http://www.idpf.org/2007/ops" xml:lang="zh" lang="zh">
+<head>
+  <meta charset="utf-8"/>
+  <title>{{ i18n.table_of_contents }}</title>
+  <link href="styles/style.css" rel="stylesheet" type="text/css"/>
+</head>
+<body>
+  <nav epub:type="toc" id="toc" role="doc-toc">
+    <h1>{{ i18n.table_of_contents }}</h1>
+    <ol>
+{% if has_cover %}
+      <li>
+        <a href="Text/cover.xhtml">{{ i18n.cover }}</a>
+      </li>
+{% endif %}
+{% if has_head_chapter %}
+      <li>
+        <a href="Text/head.xhtml">{{ head_chapter_title }}</a>
+      </li>
+{% endif %}
+{{ toc_list|safe }}
+    </ol>
+  </nav>
+
+  <nav epub:type="landmarks" id="landmarks" hidden="hidden">
+    <h2>{{ i18n.landmarks }}</h2>
+    <ol>
+{% if has_cover %}
+      <li>
+        <a epub:type="cover" href="Text/cover.xhtml">{{ i18n.cover }}</a>
+      </li>
+{% endif %}
+{% if first_chapter_file %}
+      <li>
+        <a epub:type="bodymatter" href="Text/{{ first_chapter_file }}">{{ i18n.start_of_content }}</a>
+      </li>
+{% endif %}
+    </ol>
+  </nav>
+</body>
+</html>

@@ -32,6 +32,7 @@ class Context:
         self._latex_render: LaTeXRender = latex_render
         self._path_to_node: dict[Path, _AssetNode] = {}  # source_path -> node
         self._hash_to_node: dict[str, _AssetNode] = {}  # content_hash -> node
+        self._chapters_with_mathml: set[str] = set()  # Track chapters containing MathML
 
     @property
     def file(self) -> ZipFile:
@@ -54,6 +55,14 @@ class Context:
         nodes = list(self._hash_to_node.values())
         nodes.sort(key=lambda node: node.file_name)
         return [(node.file_name, node.media_type) for node in nodes]
+
+    def mark_chapter_has_mathml(self, chapter_file_name: str) -> None:
+        """Mark a chapter as containing MathML content for EPUB 3.0 manifest properties."""
+        self._chapters_with_mathml.add(chapter_file_name)
+
+    def chapter_has_mathml(self, chapter_file_name: str) -> bool:
+        """Check if a chapter contains MathML content."""
+        return chapter_file_name in self._chapters_with_mathml
 
     def use_asset(
         self,
