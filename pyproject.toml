@@ -1,10 +1,26 @@
 [tool.poetry]
 name = "epub-generator"
-version = "0.0.3"
-description = ""
+version = "0.1.0"
+description = "A simple Python EPUB 3.0 generator with a single API call"
 authors = ["Tao Zeyu <i@taozeyu.com>"]
 license = "MIT"
 readme = "README.md"
+homepage = "https://github.com/moskize91/epub-generator"
+repository = "https://github.com/moskize91/epub-generator"
+keywords = ["epub", "epub3", "ebook", "generator", "publishing"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Text Processing :: Markup :: HTML",
+    "Topic :: Text Processing :: Markup :: XML",
+]
 
 [tool.poetry.dependencies]
 python = ">=3.10,<3.14"
