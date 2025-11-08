@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from typing import Any, Callable
 
-from .types import EpubData, TocItem
+from ..types import EpubData, TocItem
 
 
 @dataclass

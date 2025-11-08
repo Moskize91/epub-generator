@@ -1,4 +1,4 @@
-from .gen_epub import generate_epub
+from .generation import generate_epub
 from .options import LaTeXRender, TableRender
 from .types import (
     BookMeta,

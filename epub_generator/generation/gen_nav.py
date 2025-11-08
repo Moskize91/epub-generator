@@ -1,9 +1,9 @@
 from html import escape
 
-from .context import Template
+from ..context import Template
+from ..i18n import I18N
+from ..types import BookMeta, EpubData, TocItem
 from .gen_toc import NavPoint
-from .i18n import I18N
-from .types import BookMeta, EpubData, TocItem
 
 
 def gen_nav(

@@ -6,9 +6,9 @@ from xml.etree.ElementTree import Element, fromstring
 import matplotlib.pyplot as plt
 from latex2mathml.converter import convert
 
-from .context import Context
-from .options import LaTeXRender, TableRender
-from .types import Formula, Image, Table
+from ..context import Context
+from ..options import LaTeXRender, TableRender
+from ..types import Formula, Image, Table
 
 _MEDIA_TYPE_MAP = {
     ".png": "image/png",

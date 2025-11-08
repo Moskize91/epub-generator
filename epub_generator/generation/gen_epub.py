@@ -5,13 +5,13 @@ from typing import Literal
 from uuid import uuid4
 from zipfile import ZipFile
 
-from .context import Context, Template
+from ..context import Context, Template
+from ..i18n import I18N
+from ..options import LaTeXRender, TableRender
+from ..types import EpubData, Formula
 from .gen_chapter import generate_chapter
 from .gen_nav import gen_nav
 from .gen_toc import NavPoint, gen_toc
-from .i18n import I18N
-from .options import LaTeXRender, TableRender
-from .types import EpubData
 
 
 def generate_epub(
@@ -102,7 +102,6 @@ def _write_chapters_from_data(
     epub_data: EpubData,
     latex_render: LaTeXRender,
 ):
-    """Write chapter XHTML files and detect MathML content."""
     if epub_data.get_head is not None:
         chapter = epub_data.get_head()
         data = generate_chapter(context, chapter, i18n)
@@ -126,9 +125,6 @@ def _write_chapters_from_data(
 
 
 def _chapter_has_formula(chapter) -> bool:
-    """Check if a chapter contains Formula elements."""
-    from .types import Formula
-
     for element in chapter.elements:
         if isinstance(element, Formula):
             return True
@@ -140,7 +136,6 @@ def _write_basic_files(
     epub_data: EpubData,
     nav_points: list[NavPoint],
 ):
-    """Write container.xml and content.opf with EPUB 3.0 metadata."""
     meta = epub_data.meta
     has_cover = epub_data.cover_image_path is not None
     has_head_chapter = epub_data.get_head is not None

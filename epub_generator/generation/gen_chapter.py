@@ -1,10 +1,9 @@
 from typing import Generator
 from xml.etree.ElementTree import Element
 
-from .context import Context
-from .gen_asset import process_formula, process_image, process_table
-from .i18n import I18N
-from .types import (
+from ..context import Context
+from ..i18n import I18N
+from ..types import (
     Chapter,
     ContentBlock,
     Formula,
@@ -15,6 +14,7 @@ from .types import (
     TextKind,
 )
 from .xml_utils import serialize_element, set_epub_type
+from .gen_asset import process_formula, process_image, process_table
 
 
 def generate_chapter(

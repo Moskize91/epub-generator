@@ -1,23 +1,23 @@
-"""Smoke tests for EPUB 3.0 generation using epubcheck."""
 import shutil
 import subprocess
 import unittest
 from pathlib import Path
 
-from epub_generator.gen_epub import generate_epub
-from epub_generator.options import LaTeXRender, TableRender
-from epub_generator.types import (
+from epub_generator import (
     BookMeta,
     Chapter,
     EpubData,
     Footnote,
     Formula,
     Image,
+    LaTeXRender,
     Mark,
     Table,
+    TableRender,
     Text,
     TextKind,
     TocItem,
+    generate_epub,
 )
 
 
