@@ -7,7 +7,6 @@ import matplotlib.pyplot as plt
 from latex2mathml.converter import convert
 
 from .context import Context
-from .hash import sha256_hash
 from .options import LaTeXRender, TableRender
 from .types import Formula, Image, Table
 
@@ -50,13 +49,14 @@ def process_formula(context: Context, formula: Formula) -> Element | None:
         svg_image = _latex_formula2svg(latex_expr)
         if svg_image is None:
             return None
-
-        file_name = f"{sha256_hash(svg_image)}.svg"
+        file_name = context.add_asset(
+            data=svg_image, 
+            media_type="image/svg+xml", 
+            file_ext=".svg",
+        )
         img_element = Element("img")
         img_element.set("src", f"../assets/{file_name}")
         img_element.set("alt", "formula")
-
-        context.add_asset(file_name, "image/svg+xml", svg_image)
 
         wrapper = Element("div", attrib={"class": "alt-wrapper"})
         wrapper.append(img_element)
@@ -65,17 +65,12 @@ def process_formula(context: Context, formula: Formula) -> Element | None:
     return None
 
 def process_image(context: Context, image: Image) -> Element | None:
-    if not image.path.exists():
-        raise FileNotFoundError(f"Image file not found: {image.path}")
-
-    with open(image.path, "rb") as f:
-        file_hash = sha256_hash(f.read())
-
     file_ext = image.path.suffix or ".png"
-    file_name = f"{file_hash}{file_ext}"
-    media_type = _MEDIA_TYPE_MAP.get(file_ext.lower(), "image/png")
-    context.use_asset(file_name, media_type, image.path)
-
+    file_name = context.use_asset(
+        source_path=image.path, 
+        media_type=_MEDIA_TYPE_MAP.get(file_ext.lower(), "image/png"), 
+        file_ext=file_ext,
+    )
     img_element = Element("img")
     img_element.set("src", f"../assets/{file_name}")
     img_element.set("alt", image.alt_text)

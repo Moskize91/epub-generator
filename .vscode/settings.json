@@ -5,7 +5,9 @@
         "mathml",
         "matplotlib",
         "OEBPS",
+        "oomol",
         "pylint",
+        "usetex",
         "zinfo"
     ],
     "python-envs.defaultEnvManager": "ms-python.python:conda",

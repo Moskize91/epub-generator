@@ -25,10 +25,13 @@ jobs:
           poetry-version: "2.1.3"
 
       - name: Install dependencies
-        run: poetry install --no-root --with dev
+        run: poetry install --with dev
 
       - name: Run pylint
         run: bash scripts/lint.sh
+
+      - name: Run tests
+        run: poetry run python test.py
 
       - name: Build package
         run: poetry build
