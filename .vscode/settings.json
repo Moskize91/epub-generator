@@ -13,6 +13,7 @@
         "oomol",
         "pylint",
         "usetex",
+        "Zeyu",
         "zinfo"
     ],
     "python-envs.defaultEnvManager": "ms-python.python:conda",
