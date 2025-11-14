@@ -14,7 +14,6 @@
   {% endfor %}
   {% if citations %}
   <section epub:type="footnotes" role="doc-endnotes">
-    <h2>{{ i18n.references }}</h2>
     {% for item in citations %}
     {{ item|safe }}
     {% endfor %}
