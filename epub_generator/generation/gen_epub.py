@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
 from os import PathLike
 from pathlib import Path
-from typing import Literal
+from typing import Callable, Literal
 from uuid import uuid4
 from zipfile import ZipFile
 
@@ -20,6 +20,7 @@ def generate_epub(
     lan: Literal["zh", "en"] = "zh",
     table_render: TableRender = TableRender.HTML,
     latex_render: LaTeXRender = LaTeXRender.MATHML,
+    assert_not_aborted: Callable[[], None] = lambda: None,
 ) -> None:
     i18n = I18N(lan)
     template = Template()
@@ -42,12 +43,15 @@ def generate_epub(
             zinfo_or_arcname="mimetype",
             data=template.render("mimetype").encode("utf-8"),
         )
+        assert_not_aborted()
+
         _write_chapters_from_data(
             context=context,
             i18n=i18n,
             nav_points=nav_points,
             epub_data=epub_data,
             latex_render=latex_render,
+            assert_not_aborted=assert_not_aborted,
         )
         nav_xhtml = gen_nav(
             template=template,
@@ -60,12 +64,16 @@ def generate_epub(
             zinfo_or_arcname="OEBPS/nav.xhtml",
             data=nav_xhtml.encode("utf-8"),
         )
+        assert_not_aborted()
+
         _write_basic_files(
             context=context,
             i18n=i18n,
             epub_data=epub_data,
             nav_points=nav_points,
         )
+        assert_not_aborted()
+
         _write_assets_from_data(
             context=context,
             i18n=i18n,
@@ -101,6 +109,7 @@ def _write_chapters_from_data(
     nav_points: list[NavPoint],
     epub_data: EpubData,
     latex_render: LaTeXRender,
+    assert_not_aborted: Callable[[], None],
 ):
     if epub_data.get_head is not None:
         chapter = epub_data.get_head()
@@ -111,6 +120,7 @@ def _write_chapters_from_data(
         )
         if latex_render == LaTeXRender.MATHML and _chapter_has_formula(chapter):
             context.mark_chapter_has_mathml("head.xhtml")
+        assert_not_aborted()
 
     for nav_point in nav_points:
         if nav_point.get_chapter is not None:
@@ -122,6 +132,7 @@ def _write_chapters_from_data(
             )
             if latex_render == LaTeXRender.MATHML and _chapter_has_formula(chapter):
                 context.mark_chapter_has_mathml(nav_point.file_name)
+            assert_not_aborted()
 
 
 def _chapter_has_formula(chapter) -> bool:
