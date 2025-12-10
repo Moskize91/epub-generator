@@ -84,13 +84,6 @@ class Mark:
     """Citation ID, matches Footnote.id"""
 
 @dataclass
-class Text:
-    kind: TextKind
-    """Kind of text block."""
-    content: list[str | Mark]
-    """Text content with optional citation marks."""
-    
-@dataclass
 class Table:
     """HTML table."""
     html_content: str
@@ -113,6 +106,12 @@ class Image:
     alt_text: str = "image"
     """Alt text (defaults to "image")"""
 
+@dataclass
+class Text:
+    kind: TextKind
+    """Kind of text block."""
+    content: list[str | Mark | Formula]
+    """Text content with optional citation marks."""
 
 @dataclass
 class Footnote:
