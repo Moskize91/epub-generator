@@ -34,7 +34,12 @@ def process_table(context: Context, table: Table) -> Element | None:
         return None
 
 
-def process_formula(context: Context, formula: Formula) -> Element | None:
+def process_formula(
+        context: Context, 
+        formula: Formula, 
+        inline_mode: bool,
+    ) -> Element | None:
+
     if context.latex_render == LaTeXRender.CLIPPING:
         return None
 
@@ -43,8 +48,10 @@ def process_formula(context: Context, formula: Formula) -> Element | None:
         return None
 
     if context.latex_render == LaTeXRender.MATHML:
-        return _latex2mathml(latex_expr)
-
+        return _latex2mathml(
+            latex=latex_expr, 
+            inline_mode=inline_mode,
+        )
     elif context.latex_render == LaTeXRender.SVG:
         svg_image = _latex_formula2svg(latex_expr)
         if svg_image is None:
@@ -83,9 +90,12 @@ def process_image(context: Context, image: Image) -> Element | None:
 _ESCAPE_UNICODE_PATTERN = re.compile(r"&#x([0-9A-Fa-f]{5});")
 
 
-def _latex2mathml(latex: str) -> None | Element:
+def _latex2mathml(latex: str, inline_mode: bool) -> None | Element:
     try:
-        html_latex = convert(latex)
+        html_latex = convert(
+            latex=latex,
+            display="inline" if inline_mode else "block",
+        )
     except Exception:
         return None
 

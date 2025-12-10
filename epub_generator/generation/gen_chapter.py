@@ -13,8 +13,8 @@ from ..types import (
     Text,
     TextKind,
 )
-from .xml_utils import serialize_element, set_epub_type
 from .gen_asset import process_formula, process_image, process_table
+from .xml_utils import serialize_element, set_epub_type
 
 
 def generate_chapter(
@@ -98,7 +98,7 @@ def _render_content_block(context: Context, block: ContentBlock) -> Element | No
         else:
             raise ValueError(f"Unknown TextKind: {block.kind}")
 
-        _render_text_content(container, block.content)
+        _render_text_content(context, container, block.content)
 
         if block.kind == TextKind.QUOTE:
             blockquote = Element("blockquote")
@@ -111,7 +111,7 @@ def _render_content_block(context: Context, block: ContentBlock) -> Element | No
         return process_table(context, block)
 
     elif isinstance(block, Formula):
-        return process_formula(context, block)
+        return process_formula(context, block, inline_mode=False)
 
     elif isinstance(block, Image):
         return process_image(context, block)
@@ -120,7 +120,7 @@ def _render_content_block(context: Context, block: ContentBlock) -> Element | No
         return None
 
 
-def _render_text_content(parent: Element, content: list[str | Mark]) -> None:
+def _render_text_content(context: Context, parent: Element, content: list[str | Mark | Formula]) -> None:
     """Render text content with inline citation marks."""
     current_element = parent
     for item in content:
@@ -135,6 +135,17 @@ def _render_text_content(parent: Element, content: list[str | Mark]) -> None:
                     current_element.tail = item
                 else:
                     current_element.tail += item
+
+        elif isinstance(item, Formula):
+            formula_element = process_formula(
+                context=context,
+                formula=item,
+                inline_mode=True,
+            )
+            if formula_element is not None:
+                parent.append(formula_element)
+                current_element = formula_element
+
         elif isinstance(item, Mark):
             # EPUB 3.0 noteref with semantic attributes
             anchor = Element("a")
