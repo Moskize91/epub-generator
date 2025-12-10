@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "epub-generator"
-version = "0.1.1"
+version = "0.1.2"
 description = "A simple Python EPUB 3.0 generator with a single API call"
 authors = ["Tao Zeyu <i@taozeyu.com>"]
 license = "MIT"
