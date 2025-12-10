@@ -57,15 +57,19 @@ def process_formula(
         if svg_image is None:
             return None
         file_name = context.add_asset(
-            data=svg_image, 
-            media_type="image/svg+xml", 
+            data=svg_image,
+            media_type="image/svg+xml",
             file_ext=".svg",
         )
         img_element = Element("img")
         img_element.set("src", f"../assets/{file_name}")
         img_element.set("alt", "formula")
 
-        wrapper = Element("div", attrib={"class": "alt-wrapper"})
+        if inline_mode:
+            wrapper = Element("span", attrib={"class": "formula-inline"})
+        else:
+            wrapper = Element("div", attrib={"class": "alt-wrapper"})
+
         wrapper.append(img_element)
         return wrapper
 
