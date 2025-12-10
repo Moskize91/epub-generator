@@ -2,6 +2,7 @@ import re
 from xml.etree.ElementTree import Element, tostring
 
 _EPUB_NS = "http://www.idpf.org/2007/ops"
+_MATHML_NS = "http://www.w3.org/1998/Math/MathML"
 
 
 def set_epub_type(element: Element, epub_type: str) -> None:
@@ -9,10 +10,22 @@ def set_epub_type(element: Element, epub_type: str) -> None:
 
 def serialize_element(element: Element) -> str:
     xml_string = tostring(element, encoding="unicode")
-    xml_string = xml_string.replace(f"{{{_EPUB_NS}}}", "epub:")
-    ns_pattern = r'xmlns:(ns\d+)="' + re.escape(_EPUB_NS) + r'"'
-    matches = re.findall(ns_pattern, xml_string)
-    for ns_prefix in matches:
-        xml_string = xml_string.replace(f' xmlns:{ns_prefix}="{_EPUB_NS}"', "")
-        xml_string = xml_string.replace(f"{ns_prefix}:", "epub:")
+    for prefix, namespace_uri, keep_xmlns in (
+        ("epub", _EPUB_NS, False),  # EPUB namespace: remove xmlns (declared at root)
+        ("m", _MATHML_NS, True),     # MathML namespace: keep xmlns with clean prefix
+    ):
+        xml_string = xml_string.replace(f"{{{namespace_uri}}}", f"{prefix}:")
+        pattern = r"xmlns:(ns\d+)=\"" + re.escape(namespace_uri) + r"\""
+        matches = re.findall(pattern, xml_string)
+
+        for ns_prefix in matches:
+            if keep_xmlns:
+                xml_string = xml_string.replace(
+                    f" xmlns:{ns_prefix}=\"{namespace_uri}\"",
+                    f" xmlns:{prefix}=\"{namespace_uri}\""
+                )
+            else:
+                xml_string = xml_string.replace(f" xmlns:{ns_prefix}=\"{namespace_uri}\"", "")
+            xml_string = xml_string.replace(f"{ns_prefix}:", f"{prefix}:")
+
     return xml_string
