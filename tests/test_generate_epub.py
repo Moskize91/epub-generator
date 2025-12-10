@@ -292,7 +292,7 @@ class TestGenerateEpub(unittest.TestCase):
         self.assertTrue(success, f"epubcheck failed:\n{output}")
 
     def test_epub_with_mathml(self):
-        """Test EPUB with MathML formulas."""
+        """Test EPUB with MathML formulas (block-level)."""
         epub_data = EpubData(
             meta=BookMeta(title="Book with Math"),
             chapters=[
@@ -314,6 +314,58 @@ class TestGenerateEpub(unittest.TestCase):
         self.assertTrue(output_path.exists())
         success, output = self._run_epubcheck(output_path)
         self.assertTrue(success, f"epubcheck failed:\n{output}")
+
+    def test_epub_with_inline_formulas(self):
+        """Test EPUB with inline formulas (MathML and SVG)."""
+        epub_data = EpubData(
+            meta=BookMeta(title="Book with Inline Math"),
+            chapters=[
+                TocItem(
+                    title="Chapter 1",
+                    get_chapter=lambda: Chapter(
+                        elements=[
+                            Text(
+                                kind=TextKind.BODY,
+                                content=[
+                                    "The Pythagorean theorem ",
+                                    Formula(latex_expression="a^2 + b^2 = c^2"),
+                                    " is fundamental in geometry. ",
+                                    "Einstein's famous equation ",
+                                    Formula(latex_expression="E = mc^2"),
+                                    " shows mass-energy equivalence.",
+                                ],
+                            ),
+                            Text(
+                                kind=TextKind.BODY,
+                                content=[
+                                    "Inline formulas like ",
+                                    Formula(latex_expression=r"\frac{1}{2}"),
+                                    " and ",
+                                    Formula(latex_expression=r"\sum_{i=1}^{n} i"),
+                                    " work seamlessly in text.",
+                                ],
+                            ),
+                        ]
+                    ),
+                ),
+            ],
+        )
+
+        # Test with MathML
+        output_path_mathml = self.temp_dir / "with_inline_formulas_mathml.epub"
+        generate_epub(epub_data, output_path_mathml, latex_render=LaTeXRender.MATHML)
+
+        self.assertTrue(output_path_mathml.exists())
+        success, output = self._run_epubcheck(output_path_mathml)
+        self.assertTrue(success, f"epubcheck failed for MathML:\n{output}")
+
+        # Test with SVG
+        output_path_svg = self.temp_dir / "with_inline_formulas_svg.epub"
+        generate_epub(epub_data, output_path_svg, latex_render=LaTeXRender.SVG)
+
+        self.assertTrue(output_path_svg.exists())
+        success, output = self._run_epubcheck(output_path_svg)
+        self.assertTrue(success, f"epubcheck failed for SVG:\n{output}")
 
     def test_epub_with_images(self):
         """Test EPUB with embedded images."""
