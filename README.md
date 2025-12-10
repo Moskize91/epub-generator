@@ -53,9 +53,9 @@ That's it! You now have a valid EPUB 3.0 ebook file.
 
 - **Minimal API**: Just one function call `generate_epub()`
 - **EPUB 3.0**: Generates standards-compliant EPUB 3.0 format
-- **Rich Content**: Supports text, images, tables, math formulas, footnotes
+- **Rich Content**: Supports text, images, tables, math formulas (block-level and inline), footnotes
 - **Flexible Structure**: Nested chapters, prefaces, cover images
-- **Math Support**: LaTeX to MathML conversion
+- **Math Support**: LaTeX to MathML/SVG conversion with inline formula support
 - **Type Safe**: Full type annotations included
 
 ## Advanced Usage
@@ -223,6 +223,8 @@ generate_epub(epub_data, "book_with_tables.epub")
 
 ### Add Math Formulas
 
+Block-level formulas:
+
 ```python
 from epub_generator import generate_epub, EpubData, TocItem, Chapter, Text, TextKind, Formula, LaTeXRender
 
@@ -233,7 +235,7 @@ epub_data = EpubData(
             get_chapter=lambda: Chapter(
                 elements=[
                     Text(kind=TextKind.BODY, content=["Pythagorean theorem:"]),
-                    Formula(latex_expression="x^2 + y^2 = z^2"),  # LaTeX expression
+                    Formula(latex_expression="x^2 + y^2 = z^2"),  # Block-level formula
                 ]
             ),
         ),
@@ -242,6 +244,34 @@ epub_data = EpubData(
 
 # Render math formulas using MathML
 generate_epub(epub_data, "book_with_math.epub", latex_render=LaTeXRender.MATHML)
+```
+
+Inline formulas embedded in text:
+
+```python
+epub_data = EpubData(
+    chapters=[
+        TocItem(
+            title="Chapter 1",
+            get_chapter=lambda: Chapter(
+                elements=[
+                    Text(
+                        kind=TextKind.BODY,
+                        content=[
+                            "The Pythagorean theorem ",
+                            Formula(latex_expression="a^2 + b^2 = c^2"),  # Inline formula
+                            " is fundamental. Einstein's equation ",
+                            Formula(latex_expression="E = mc^2"),
+                            " shows mass-energy equivalence.",
+                        ],
+                    ),
+                ]
+            ),
+        ),
+    ],
+)
+
+generate_epub(epub_data, "book_with_inline_math.epub", latex_render=LaTeXRender.MATHML)
 ```
 
 ### Add Prefaces
@@ -365,7 +395,7 @@ class Chapter:
   @dataclass
   class Text:
       kind: TextKind                            # BODY | HEADLINE | QUOTE
-      content: list[str | Mark]                 # Text content with optional marks
+      content: list[str | Mark | Formula]       # Text with optional marks and inline formulas
   ```
 
 - **`Image`**: Image reference
