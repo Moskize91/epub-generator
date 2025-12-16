@@ -107,10 +107,10 @@ class Image:
     """Alt text (defaults to "image")"""
 
 @dataclass
-class Text:
+class TextBlock:
     kind: TextKind
     """Kind of text block."""
-    content: list[str | Mark | Formula]
+    content: list["str | Mark | Formula | HTMLTag"]
     """Text content with optional citation marks."""
 
 @dataclass
@@ -126,7 +126,7 @@ class Footnote:
     """Content blocks"""
 
 
-ContentBlock = Text | Table | Formula | Image
+ContentBlock = TextBlock | Table | Formula | Image
 """Union of all content blocks that appear in main chapter content."""
 
 @dataclass
@@ -139,3 +139,16 @@ class Chapter:
     """Footnotes"""
 
 ChapterGetter = Callable[[], Chapter]
+
+@dataclass
+class HTMLTag:
+    """Generic HTML tag representation."""
+
+    name: str
+    """Tag name"""
+
+    attributes: list[tuple[str, str]] = field(default_factory=list)
+    """List of (attribute, value) pairs"""
+
+    content: list["str | Mark | Formula | HTMLTag"] = field(default_factory=list)
+    """Inner HTML content"""
