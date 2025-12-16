@@ -150,5 +150,5 @@ class HTMLTag:
     attributes: list[tuple[str, str]] = field(default_factory=list)
     """List of (attribute, value) pairs"""
 
-    content: list[list["str | Mark | Formula | HTMLTag"]] = field(default_factory=list)
+    content: list["str | Mark | Formula | HTMLTag"] = field(default_factory=list)
     """Inner HTML content"""

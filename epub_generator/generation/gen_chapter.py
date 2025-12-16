@@ -7,6 +7,7 @@ from ..types import (
     Chapter,
     ContentBlock,
     Formula,
+    HTMLTag,
     Image,
     Mark,
     Table,
@@ -98,8 +99,11 @@ def _render_content_block(context: Context, block: ContentBlock) -> Element | No
         else:
             raise ValueError(f"Unknown TextKind: {block.kind}")
 
-        _render_text_content(context, container, block.content)
-
+        _render_text_content(
+            context=context, 
+            parent=container, 
+            content=block.content,
+        )
         if block.kind == TextKind.QUOTE:
             blockquote = Element("blockquote")
             blockquote.append(container)
@@ -120,7 +124,7 @@ def _render_content_block(context: Context, block: ContentBlock) -> Element | No
         return None
 
 
-def _render_text_content(context: Context, parent: Element, content: list[str | Mark | Formula]) -> None:
+def _render_text_content(context: Context, parent: Element, content: list[str | Mark | Formula | HTMLTag]) -> None:
     """Render text content with inline citation marks."""
     current_element = parent
     for item in content:
@@ -135,6 +139,18 @@ def _render_text_content(context: Context, parent: Element, content: list[str | 
                     current_element.tail = item
                 else:
                     current_element.tail += item
+
+        elif isinstance(item, HTMLTag):
+            tag_element = Element(item.name)
+            for attr, value in item.attributes:
+                tag_element.set(attr, value)
+            _render_text_content(
+                context=context,
+                parent=tag_element,
+                content=item.content,
+            )
+            parent.append(tag_element)
+            current_element = tag_element
 
         elif isinstance(item, Formula):
             formula_element = process_formula(

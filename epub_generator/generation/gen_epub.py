@@ -6,9 +6,10 @@ from uuid import uuid4
 from zipfile import ZipFile
 
 from ..context import Context, Template
+from ..html_tag import search_content
 from ..i18n import I18N
 from ..options import LaTeXRender, TableRender
-from ..types import EpubData, Formula, TextBlock
+from ..types import Chapter, EpubData, Formula, TextBlock
 from .gen_chapter import generate_chapter
 from .gen_nav import gen_nav
 from .gen_toc import NavPoint, gen_toc
@@ -135,13 +136,13 @@ def _write_chapters_from_data(
             assert_not_aborted()
 
 
-def _chapter_has_formula(chapter) -> bool:
+def _chapter_has_formula(chapter: Chapter) -> bool:
     """Check if chapter contains any formulas (block-level or inline)."""
     for element in chapter.elements:
         if isinstance(element, Formula):
             return True
         if isinstance(element, TextBlock):
-            for item in element.content:
+            for item in search_content(element.content):
                 if isinstance(item, Formula):
                     return True
     for footnote in chapter.footnotes:
@@ -149,7 +150,7 @@ def _chapter_has_formula(chapter) -> bool:
             if isinstance(content_block, Formula):
                 return True
             if isinstance(content_block, TextBlock):
-                for item in content_block.content:
+                for item in search_content(content_block.content):
                     if isinstance(item, Formula):
                         return True
     return False
