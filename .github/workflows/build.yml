@@ -3,11 +3,6 @@ on:
   pull_request:
     branches:
       - "main"
-    paths:
-      - "epub_generator/**"
-      - "tests/**"
-      - "poetry.lock"
-      - "pyproject.toml"
   push:
     branches:
       - "main"
