@@ -10,7 +10,7 @@ from ..types import (
     Image,
     Mark,
     Table,
-    Text,
+    TextBlock,
     TextKind,
 )
 from .gen_asset import process_formula, process_image, process_table
@@ -88,7 +88,7 @@ def _render_footnotes(
 
 
 def _render_content_block(context: Context, block: ContentBlock) -> Element | None:
-    if isinstance(block, Text):
+    if isinstance(block, TextBlock):
         if block.kind == TextKind.HEADLINE:
             container = Element("h1")
         elif block.kind == TextKind.QUOTE:

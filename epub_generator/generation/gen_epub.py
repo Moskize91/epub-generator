@@ -8,7 +8,7 @@ from zipfile import ZipFile
 from ..context import Context, Template
 from ..i18n import I18N
 from ..options import LaTeXRender, TableRender
-from ..types import EpubData, Formula, Text
+from ..types import EpubData, Formula, TextBlock
 from .gen_chapter import generate_chapter
 from .gen_nav import gen_nav
 from .gen_toc import NavPoint, gen_toc
@@ -140,7 +140,7 @@ def _chapter_has_formula(chapter) -> bool:
     for element in chapter.elements:
         if isinstance(element, Formula):
             return True
-        if isinstance(element, Text):
+        if isinstance(element, TextBlock):
             for item in element.content:
                 if isinstance(item, Formula):
                     return True
@@ -148,7 +148,7 @@ def _chapter_has_formula(chapter) -> bool:
         for content_block in footnote.contents:
             if isinstance(content_block, Formula):
                 return True
-            if isinstance(content_block, Text):
+            if isinstance(content_block, TextBlock):
                 for item in content_block.content:
                     if isinstance(item, Formula):
                         return True
