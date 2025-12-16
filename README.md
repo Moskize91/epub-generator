@@ -21,7 +21,7 @@ pip install epub-generator
 ### Generate Your First Book in 5 Minutes
 
 ```python
-from epub_generator import generate_epub, EpubData, BookMeta, TocItem, Chapter, Text, TextKind
+from epub_generator import generate_epub, EpubData, BookMeta, TocItem, Chapter, TextBlock, TextKind
 
 # Prepare book data
 epub_data = EpubData(
@@ -34,9 +34,9 @@ epub_data = EpubData(
             title="Chapter 1",
             get_chapter=lambda: Chapter(
                 elements=[
-                    Text(kind=TextKind.HEADLINE, content=["Chapter 1"]),
-                    Text(kind=TextKind.BODY, content=["This is the first paragraph."]),
-                    Text(kind=TextKind.BODY, content=["This is the second paragraph."]),
+                    TextBlock(kind=TextKind.HEADLINE, content=["Chapter 1"]),
+                    TextBlock(kind=TextKind.BODY, content=["This is the first paragraph."]),
+                    TextBlock(kind=TextKind.BODY, content=["This is the second paragraph."]),
                 ]
             ),
         ),
@@ -53,7 +53,7 @@ That's it! You now have a valid EPUB 3.0 ebook file.
 
 - **Minimal API**: Just one function call `generate_epub()`
 - **EPUB 3.0**: Generates standards-compliant EPUB 3.0 format
-- **Rich Content**: Supports text, images, tables, math formulas (block-level and inline), footnotes
+- **Rich Content**: Supports text, images, tables, math formulas (block-level and inline), footnotes, custom HTML tags
 - **Flexible Structure**: Nested chapters, prefaces, cover images
 - **Math Support**: LaTeX to MathML/SVG conversion with inline formula support
 - **Type Safe**: Full type annotations included
@@ -65,7 +65,7 @@ That's it! You now have a valid EPUB 3.0 ebook file.
 ```python
 from datetime import datetime, timezone
 from pathlib import Path
-from epub_generator import generate_epub, EpubData, BookMeta, TocItem, Chapter, Text, TextKind
+from epub_generator import generate_epub, EpubData, BookMeta, TocItem, Chapter, TextBlock, TextKind
 
 epub_data = EpubData(
     meta=BookMeta(
@@ -84,8 +84,8 @@ epub_data = EpubData(
             title="Chapter 1",
             get_chapter=lambda: Chapter(
                 elements=[
-                    Text(kind=TextKind.HEADLINE, content=["Chapter 1"]),
-                    Text(kind=TextKind.BODY, content=["Main content..."]),
+                    TextBlock(kind=TextKind.HEADLINE, content=["Chapter 1"]),
+                    TextBlock(kind=TextKind.BODY, content=["Main content..."]),
                 ]
             ),
         ),
@@ -98,7 +98,7 @@ generate_epub(epub_data, "book_with_cover.epub")
 ### Nested Chapter Structure
 
 ```python
-from epub_generator import generate_epub, EpubData, TocItem, Chapter, Text, TextKind
+from epub_generator import generate_epub, EpubData, TocItem, Chapter, TextBlock, TextKind
 
 epub_data = EpubData(
     chapters=[
@@ -109,7 +109,7 @@ epub_data = EpubData(
                     title="Chapter 1.1",
                     get_chapter=lambda: Chapter(
                         elements=[
-                            Text(kind=TextKind.BODY, content=["Content 1.1..."]),
+                            TextBlock(kind=TextKind.BODY, content=["Content 1.1..."]),
                         ]
                     ),
                 ),
@@ -117,7 +117,7 @@ epub_data = EpubData(
                     title="Chapter 1.2",
                     get_chapter=lambda: Chapter(
                         elements=[
-                            Text(kind=TextKind.BODY, content=["Content 1.2..."]),
+                            TextBlock(kind=TextKind.BODY, content=["Content 1.2..."]),
                         ]
                     ),
                 ),
@@ -133,7 +133,7 @@ generate_epub(epub_data, "book_with_nested_chapters.epub")
 
 ```python
 from pathlib import Path
-from epub_generator import generate_epub, EpubData, TocItem, Chapter, Text, TextKind, Image
+from epub_generator import generate_epub, EpubData, TocItem, Chapter, TextBlock, TextKind, Image
 
 epub_data = EpubData(
     chapters=[
@@ -141,7 +141,7 @@ epub_data = EpubData(
             title="Chapter 1",
             get_chapter=lambda: Chapter(
                 elements=[
-                    Text(kind=TextKind.BODY, content=["Here's an image:"]),
+                    TextBlock(kind=TextKind.BODY, content=["Here's an image:"]),
                     Image(
                         path=Path("image.png"),  # Image path
                         alt_text="Image description",
@@ -158,7 +158,7 @@ generate_epub(epub_data, "book_with_images.epub")
 ### Add Footnotes
 
 ```python
-from epub_generator import generate_epub, EpubData, TocItem, Chapter, Text, TextKind, Mark, Footnote
+from epub_generator import generate_epub, EpubData, TocItem, Chapter, TextBlock, TextKind, Mark, Footnote
 
 epub_data = EpubData(
     chapters=[
@@ -166,7 +166,7 @@ epub_data = EpubData(
             title="Chapter 1",
             get_chapter=lambda: Chapter(
                 elements=[
-                    Text(
+                    TextBlock(
                         kind=TextKind.BODY,
                         content=[
                             "This is text with a footnote",
@@ -179,7 +179,7 @@ epub_data = EpubData(
                     Footnote(
                         id=1,
                         contents=[
-                            Text(kind=TextKind.BODY, content=["This is the footnote content."]),
+                            TextBlock(kind=TextKind.BODY, content=["This is the footnote content."]),
                         ],
                     ),
                 ],
@@ -194,7 +194,7 @@ generate_epub(epub_data, "book_with_footnotes.epub")
 ### Add Tables
 
 ```python
-from epub_generator import generate_epub, EpubData, TocItem, Chapter, Text, TextKind, Table
+from epub_generator import generate_epub, EpubData, TocItem, Chapter, TextBlock, TextKind, Table
 
 epub_data = EpubData(
     chapters=[
@@ -202,7 +202,7 @@ epub_data = EpubData(
             title="Chapter 1",
             get_chapter=lambda: Chapter(
                 elements=[
-                    Text(kind=TextKind.BODY, content=["Here's a table:"]),
+                    TextBlock(kind=TextKind.BODY, content=["Here's a table:"]),
                     Table(
                         html_content="""
                         <table>
@@ -226,7 +226,7 @@ generate_epub(epub_data, "book_with_tables.epub")
 Block-level formulas:
 
 ```python
-from epub_generator import generate_epub, EpubData, TocItem, Chapter, Text, TextKind, Formula, LaTeXRender
+from epub_generator import generate_epub, EpubData, TocItem, Chapter, TextBlock, TextKind, Formula, LaTeXRender
 
 epub_data = EpubData(
     chapters=[
@@ -234,7 +234,7 @@ epub_data = EpubData(
             title="Chapter 1",
             get_chapter=lambda: Chapter(
                 elements=[
-                    Text(kind=TextKind.BODY, content=["Pythagorean theorem:"]),
+                    TextBlock(kind=TextKind.BODY, content=["Pythagorean theorem:"]),
                     Formula(latex_expression="x^2 + y^2 = z^2"),  # Block-level formula
                 ]
             ),
@@ -255,7 +255,7 @@ epub_data = EpubData(
             title="Chapter 1",
             get_chapter=lambda: Chapter(
                 elements=[
-                    Text(
+                    TextBlock(
                         kind=TextKind.BODY,
                         content=[
                             "The Pythagorean theorem ",
@@ -274,10 +274,45 @@ epub_data = EpubData(
 generate_epub(epub_data, "book_with_inline_math.epub", latex_render=LaTeXRender.MATHML)
 ```
 
+### Add Custom HTML Tags
+
+You can embed custom HTML tags within text content:
+
+```python
+from epub_generator import generate_epub, EpubData, TocItem, Chapter, TextBlock, TextKind, HTMLTag
+
+epub_data = EpubData(
+    chapters=[
+        TocItem(
+            title="Chapter 1",
+            get_chapter=lambda: Chapter(elements=[TextBlock(
+                kind=TextKind.BODY,
+                content=[
+                    "This is normal text with ",
+                    HTMLTag(
+                        name="span",
+                        attributes=[("class", "highlight"), ("style", "color: red;")],
+                        content=["highlighted content"],
+                    ),
+                    " and more text with ",
+                    HTMLTag(
+                        name="strong",
+                        content=["bold text"],
+                    ),
+                    ".",
+                ],
+            )]),
+        ),
+    ],
+)
+
+generate_epub(epub_data, "book_with_html_tags.epub")
+```
+
 ### Add Prefaces
 
 ```python
-from epub_generator import generate_epub, EpubData, BookMeta, TocItem, Chapter, Text, TextKind
+from epub_generator import generate_epub, EpubData, BookMeta, TocItem, Chapter, TextBlock, TextKind
 
 epub_data = EpubData(
     meta=BookMeta(title="Book with Prefaces"),
@@ -286,8 +321,8 @@ epub_data = EpubData(
             title="Preface",
             get_chapter=lambda: Chapter(
                 elements=[
-                    Text(kind=TextKind.HEADLINE, content=["Preface"]),
-                    Text(kind=TextKind.BODY, content=["This is the preface content..."]),
+                    TextBlock(kind=TextKind.HEADLINE, content=["Preface"]),
+                    TextBlock(kind=TextKind.BODY, content=["This is the preface content..."]),
                 ]
             ),
         ),
@@ -297,7 +332,7 @@ epub_data = EpubData(
             title="Chapter 1",
             get_chapter=lambda: Chapter(
                 elements=[
-                    Text(kind=TextKind.BODY, content=["Main content..."]),
+                    TextBlock(kind=TextKind.BODY, content=["Main content..."]),
                 ]
             ),
         ),
@@ -390,12 +425,12 @@ class Chapter:
 
 `ContentBlock` is a union of:
 
-- **`Text`**: Text paragraph
+- **`TextBlock`**: Text paragraph
   ```python
   @dataclass
-  class Text:
-      kind: TextKind                            # BODY | HEADLINE | QUOTE
-      content: list[str | Mark | Formula]       # Text with optional marks and inline formulas
+  class TextBlock:
+      kind: TextKind                                # BODY | HEADLINE | QUOTE
+      content: list[str | Mark | Formula | HTMLTag] # Text with optional marks, inline formulas, and HTML tags
   ```
 
 - **`Image`**: Image reference
@@ -418,6 +453,15 @@ class Chapter:
   @dataclass
   class Formula:
       latex_expression: str                     # LaTeX expression
+  ```
+
+- **`HTMLTag`**: HTML tag
+  ```python
+  @dataclass
+  class HTMLTag:
+      name: str                                 # Tag name (e.g., "span", "div")
+      attributes: list[tuple[str, str]] = []    # List of (attribute, value) pairs
+      content: list[str | Mark | Formula | HTMLTag] = [] # Inner HTML content
   ```
 
 #### `Footnote`
