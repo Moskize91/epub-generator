@@ -6,6 +6,11 @@ on:
   push:
     branches:
       - "main"
+    paths:
+      - "epub_generator/**"
+      - "tests/**"
+      - "poetry.lock"
+      - "pyproject.toml"
 
 jobs:
   build:
