@@ -101,10 +101,12 @@ class TestGenerateEpub(unittest.TestCase):
                         elements=[
                             TextBlock(
                                 kind=TextKind.HEADLINE,
+                                level=0,
                                 content=["Chapter 1"],
                             ),
                             TextBlock(
                                 kind=TextKind.BODY,
+                                level=0,
                                 content=["This is a test paragraph."],
                             ),
                         ]
@@ -132,7 +134,7 @@ class TestGenerateEpub(unittest.TestCase):
                     title="Chapter 1",
                     get_chapter=lambda: Chapter(
                         elements=[
-                            TextBlock(kind=TextKind.BODY, content=["Test content"]),
+                            TextBlock(kind=TextKind.BODY, level=0, content=["Test content"]),
                         ]
                     ),
                 ),
@@ -158,7 +160,7 @@ class TestGenerateEpub(unittest.TestCase):
                             title="Chapter 1.1",
                             get_chapter=lambda: Chapter(
                                 elements=[
-                                    TextBlock(kind=TextKind.BODY, content=["Content 1.1"]),
+                                    TextBlock(kind=TextKind.BODY, level=0, content=["Content 1.1"]),
                                 ]
                             ),
                         ),
@@ -166,7 +168,7 @@ class TestGenerateEpub(unittest.TestCase):
                             title="Chapter 1.2",
                             get_chapter=lambda: Chapter(
                                 elements=[
-                                    TextBlock(kind=TextKind.BODY, content=["Content 1.2"]),
+                                    TextBlock(kind=TextKind.BODY, level=0, content=["Content 1.2"]),
                                 ]
                             ),
                         ),
@@ -193,6 +195,7 @@ class TestGenerateEpub(unittest.TestCase):
                         elements=[
                             TextBlock(
                                 kind=TextKind.BODY,
+                                level=0,
                                 content=[
                                     "This is a paragraph with a footnote",
                                     Mark(id=1),
@@ -207,6 +210,7 @@ class TestGenerateEpub(unittest.TestCase):
                                 contents=[
                                     TextBlock(
                                         kind=TextKind.BODY,
+                                        level=0,
                                         content=["This is the footnote content."],
                                     ),
                                 ],
@@ -237,8 +241,8 @@ class TestGenerateEpub(unittest.TestCase):
                     title="Preface",
                     get_chapter=lambda: Chapter(
                         elements=[
-                            TextBlock(kind=TextKind.HEADLINE, content=["Preface"]),
-                            TextBlock(kind=TextKind.BODY, content=["Preface content."]),
+                            TextBlock(kind=TextKind.HEADLINE, level=0, content=["Preface"]),
+                            TextBlock(kind=TextKind.BODY, level=0, content=["Preface content."]),
                         ]
                     ),
                 ),
@@ -248,7 +252,7 @@ class TestGenerateEpub(unittest.TestCase):
                     title="Chapter 1",
                     get_chapter=lambda: Chapter(
                         elements=[
-                            TextBlock(kind=TextKind.BODY, content=["Chapter 1 content."]),
+                            TextBlock(kind=TextKind.BODY, level=0, content=["Chapter 1 content."]),
                         ]
                     ),
                 ),
@@ -271,7 +275,7 @@ class TestGenerateEpub(unittest.TestCase):
                     title="Chapter 1",
                     get_chapter=lambda: Chapter(
                         elements=[
-                            TextBlock(kind=TextKind.BODY, content=["A table:"]),
+                            TextBlock(kind=TextKind.BODY, level=0, content=["A table:"]),
                             Table(
                                 html_content=(
                                     "<table><tr><th>Header</th></tr>"
@@ -300,7 +304,7 @@ class TestGenerateEpub(unittest.TestCase):
                     title="Chapter 1",
                     get_chapter=lambda: Chapter(
                         elements=[
-                            TextBlock(kind=TextKind.BODY, content=["A formula:"]),
+                            TextBlock(kind=TextKind.BODY, level=0, content=["A formula:"]),
                             Formula(latex_expression="x^2 + y^2 = z^2"),
                         ]
                     ),
@@ -326,6 +330,7 @@ class TestGenerateEpub(unittest.TestCase):
                         elements=[
                             TextBlock(
                                 kind=TextKind.BODY,
+                                level=0,
                                 content=[
                                     "The Pythagorean theorem ",
                                     Formula(latex_expression="a^2 + b^2 = c^2"),
@@ -337,6 +342,7 @@ class TestGenerateEpub(unittest.TestCase):
                             ),
                             TextBlock(
                                 kind=TextKind.BODY,
+                                level=0,
                                 content=[
                                     "Inline formulas like ",
                                     Formula(latex_expression=r"\frac{1}{2}"),
@@ -378,7 +384,7 @@ class TestGenerateEpub(unittest.TestCase):
                     title="Chapter 1",
                     get_chapter=lambda: Chapter(
                         elements=[
-                            TextBlock(kind=TextKind.BODY, content=["An image:"]),
+                            TextBlock(kind=TextKind.BODY, level=0, content=["An image:"]),
                             Image(path=test_image_path, alt_text="Test image"),
                         ]
                     ),
@@ -413,7 +419,7 @@ class TestGenerateEpub(unittest.TestCase):
                     title="Chapter 1",
                     get_chapter=lambda: Chapter(
                         elements=[
-                            TextBlock(kind=TextKind.BODY, content=["Content."]),
+                            TextBlock(kind=TextKind.BODY, level=0, content=["Content."]),
                         ]
                     ),
                 ),
@@ -443,8 +449,8 @@ class TestGenerateEpub(unittest.TestCase):
                     title="Preface",
                     get_chapter=lambda: Chapter(
                         elements=[
-                            TextBlock(kind=TextKind.HEADLINE, content=["Preface"]),
-                            TextBlock(kind=TextKind.BODY, content=["Preface text."]),
+                            TextBlock(kind=TextKind.HEADLINE, level=0, content=["Preface"]),
+                            TextBlock(kind=TextKind.BODY, level=0, content=["Preface text."]),
                         ]
                     ),
                 ),
@@ -459,10 +465,12 @@ class TestGenerateEpub(unittest.TestCase):
                                 elements=[
                                     TextBlock(
                                         kind=TextKind.HEADLINE,
+                                        level=0,
                                         content=["Chapter 1.1"],
                                     ),
                                     TextBlock(
                                         kind=TextKind.BODY,
+                                        level=0,
                                         content=[
                                             "Text with footnote",
                                             Mark(id=1),
@@ -482,6 +490,7 @@ class TestGenerateEpub(unittest.TestCase):
                                         contents=[
                                             TextBlock(
                                                 kind=TextKind.BODY,
+                                                level=0,
                                                 content=["Footnote text."],
                                             ),
                                         ],
