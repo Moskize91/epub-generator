@@ -110,6 +110,8 @@ class Image:
 class TextBlock:
     kind: TextKind
     """Kind of text block."""
+    level: int
+    """Heading level starting from 0 (only for HEADLINE: level 0 → h1, level 1 → h2, max h6; ignored for BODY and QUOTE)."""
     content: list["str | Mark | Formula | HTMLTag"]
     """Text content with optional citation marks."""
 
