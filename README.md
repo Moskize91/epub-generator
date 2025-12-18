@@ -34,9 +34,9 @@ epub_data = EpubData(
             title="Chapter 1",
             get_chapter=lambda: Chapter(
                 elements=[
-                    TextBlock(kind=TextKind.HEADLINE, content=["Chapter 1"]),
-                    TextBlock(kind=TextKind.BODY, content=["This is the first paragraph."]),
-                    TextBlock(kind=TextKind.BODY, content=["This is the second paragraph."]),
+                    TextBlock(kind=TextKind.HEADLINE, level=0, content=["Chapter 1"]),
+                    TextBlock(kind=TextKind.BODY, level=0, content=["This is the first paragraph."]),
+                    TextBlock(kind=TextKind.BODY, level=0, content=["This is the second paragraph."]),
                 ]
             ),
         ),
@@ -84,8 +84,8 @@ epub_data = EpubData(
             title="Chapter 1",
             get_chapter=lambda: Chapter(
                 elements=[
-                    TextBlock(kind=TextKind.HEADLINE, content=["Chapter 1"]),
-                    TextBlock(kind=TextKind.BODY, content=["Main content..."]),
+                    TextBlock(kind=TextKind.HEADLINE, level=0, content=["Chapter 1"]),
+                    TextBlock(kind=TextKind.BODY, level=0, content=["Main content..."]),
                 ]
             ),
         ),
@@ -109,7 +109,7 @@ epub_data = EpubData(
                     title="Chapter 1.1",
                     get_chapter=lambda: Chapter(
                         elements=[
-                            TextBlock(kind=TextKind.BODY, content=["Content 1.1..."]),
+                            TextBlock(kind=TextKind.BODY, level=0, content=["Content 1.1..."]),
                         ]
                     ),
                 ),
@@ -117,7 +117,7 @@ epub_data = EpubData(
                     title="Chapter 1.2",
                     get_chapter=lambda: Chapter(
                         elements=[
-                            TextBlock(kind=TextKind.BODY, content=["Content 1.2..."]),
+                            TextBlock(kind=TextKind.BODY, level=0, content=["Content 1.2..."]),
                         ]
                     ),
                 ),
@@ -141,7 +141,7 @@ epub_data = EpubData(
             title="Chapter 1",
             get_chapter=lambda: Chapter(
                 elements=[
-                    TextBlock(kind=TextKind.BODY, content=["Here's an image:"]),
+                    TextBlock(kind=TextKind.BODY, level=0, content=["Here's an image:"]),
                     Image(
                         path=Path("image.png"),  # Image path
                         alt_text="Image description",
@@ -168,6 +168,7 @@ epub_data = EpubData(
                 elements=[
                     TextBlock(
                         kind=TextKind.BODY,
+                        level=0,
                         content=[
                             "This is text with a footnote",
                             Mark(id=1),  # Footnote marker
@@ -179,7 +180,7 @@ epub_data = EpubData(
                     Footnote(
                         id=1,
                         contents=[
-                            TextBlock(kind=TextKind.BODY, content=["This is the footnote content."]),
+                            TextBlock(kind=TextKind.BODY, level=0, content=["This is the footnote content."]),
                         ],
                     ),
                 ],
@@ -202,7 +203,7 @@ epub_data = EpubData(
             title="Chapter 1",
             get_chapter=lambda: Chapter(
                 elements=[
-                    TextBlock(kind=TextKind.BODY, content=["Here's a table:"]),
+                    TextBlock(kind=TextKind.BODY, level=0, content=["Here's a table:"]),
                     Table(
                         html_content="""
                         <table>
@@ -234,7 +235,7 @@ epub_data = EpubData(
             title="Chapter 1",
             get_chapter=lambda: Chapter(
                 elements=[
-                    TextBlock(kind=TextKind.BODY, content=["Pythagorean theorem:"]),
+                    TextBlock(kind=TextKind.BODY, level=0, content=["Pythagorean theorem:"]),
                     Formula(latex_expression="x^2 + y^2 = z^2"),  # Block-level formula
                 ]
             ),
@@ -257,6 +258,7 @@ epub_data = EpubData(
                 elements=[
                     TextBlock(
                         kind=TextKind.BODY,
+                        level=0,
                         content=[
                             "The Pythagorean theorem ",
                             Formula(latex_expression="a^2 + b^2 = c^2"),  # Inline formula
@@ -287,6 +289,7 @@ epub_data = EpubData(
             title="Chapter 1",
             get_chapter=lambda: Chapter(elements=[TextBlock(
                 kind=TextKind.BODY,
+                level=0,
                 content=[
                     "This is normal text with ",
                     HTMLTag(
@@ -321,8 +324,8 @@ epub_data = EpubData(
             title="Preface",
             get_chapter=lambda: Chapter(
                 elements=[
-                    TextBlock(kind=TextKind.HEADLINE, content=["Preface"]),
-                    TextBlock(kind=TextKind.BODY, content=["This is the preface content..."]),
+                    TextBlock(kind=TextKind.HEADLINE, level=0, content=["Preface"]),
+                    TextBlock(kind=TextKind.BODY, level=0, content=["This is the preface content..."]),
                 ]
             ),
         ),
@@ -332,7 +335,7 @@ epub_data = EpubData(
             title="Chapter 1",
             get_chapter=lambda: Chapter(
                 elements=[
-                    TextBlock(kind=TextKind.BODY, content=["Main content..."]),
+                    TextBlock(kind=TextKind.BODY, level=0, content=["Main content..."]),
                 ]
             ),
         ),
@@ -430,6 +433,7 @@ class Chapter:
   @dataclass
   class TextBlock:
       kind: TextKind                                # BODY | HEADLINE | QUOTE
+      level: int                                    # Heading level (0→h1, 1→h2, max h6; only for HEADLINE)
       content: list[str | Mark | Formula | HTMLTag] # Text with optional marks, inline formulas, and HTML tags
   ```
 
