@@ -17,6 +17,8 @@ from ..types import (
 from .gen_asset import process_formula, process_image, process_table
 from .xml_utils import serialize_element, set_epub_type
 
+_MAX_HEADING_LEVEL = 6 # HTML standard defines heading levels from h1 to h6
+
 
 def generate_chapter(
     context: Context,
@@ -91,7 +93,8 @@ def _render_footnotes(
 def _render_content_block(context: Context, block: ContentBlock) -> Element | None:
     if isinstance(block, TextBlock):
         if block.kind == TextKind.HEADLINE:
-            container = Element("h1")
+            heading_level = min(block.level + 1, _MAX_HEADING_LEVEL)
+            container = Element(f"h{heading_level}")
         elif block.kind == TextKind.QUOTE:
             container = Element("p")
         elif block.kind == TextKind.BODY:
@@ -100,8 +103,8 @@ def _render_content_block(context: Context, block: ContentBlock) -> Element | No
             raise ValueError(f"Unknown TextKind: {block.kind}")
 
         _render_text_content(
-            context=context, 
-            parent=container, 
+            context=context,
+            parent=container,
             content=block.content,
         )
         if block.kind == TextKind.QUOTE:
