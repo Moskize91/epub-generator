@@ -84,30 +84,41 @@ class Mark:
     """Citation ID, matches Footnote.id"""
 
 @dataclass
-class Table:
-    """HTML table."""
-    html_content: str
-    """HTML table markup"""
+class BasicAsset:
+    """Asset as a base class for other assets."""
+
+    title: list["str | Mark | Formula | HTMLTag"]
+    """Asset title (before content)"""
+    caption: list["str | Mark | Formula | HTMLTag"]
+    """Asset caption (after content)"""
+
+@dataclass
+class Table(BasicAsset):
+    """Table representation."""
+
+    html_content: "HTMLTag"
+    """HTML content of the table"""
 
 
 @dataclass
-class Formula:
+class Formula(BasicAsset):
     """Mathematical formula."""
+
     latex_expression: str
     """LaTeX expression"""
 
 
 @dataclass
-class Image:
+class Image(BasicAsset):
     """Image reference."""
+
     path: Path
     """Absolute path to the image file"""
 
-    alt_text: str = "image"
-    """Alt text (defaults to "image")"""
-
 @dataclass
 class TextBlock:
+    """Text block representation."""
+
     kind: TextKind
     """Kind of text block."""
     level: int
