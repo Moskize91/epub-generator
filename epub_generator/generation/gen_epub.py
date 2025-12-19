@@ -120,7 +120,7 @@ def _write_chapters_from_data(
             data=data.encode("utf-8"),
         )
         if latex_render == LaTeXRender.MATHML and _chapter_has_formula(chapter):
-            context.mark_chapter_has_mathml("head.xhtml")
+            context.mark_chapter_has_mathml(file_name)
         assert_not_aborted()
 
 
