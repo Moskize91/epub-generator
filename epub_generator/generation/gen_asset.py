@@ -8,7 +8,8 @@ from latex2mathml.converter import convert
 
 from ..context import Context
 from ..options import LaTeXRender, TableRender
-from ..types import BasicAsset, Formula, HTMLTag, Image, Mark, Table
+from ..types import BasicAsset, Formula, HTMLTag, Image, Table
+from .gen_content import render_inline_content
 
 _MEDIA_TYPE_MAP = {
     ".png": "image/png",
@@ -17,86 +18,6 @@ _MEDIA_TYPE_MAP = {
     ".gif": "image/gif",
     ".svg": "image/svg+xml",
 }
-
-def _render_inline_content(
-    context: Context,
-    parent: Element,
-    content: list[str | Mark | Formula | HTMLTag]
-) -> None:
-    """Render inline content (for title/caption) with marks and formulas."""
-    current_element = parent
-    for item in content:
-        if isinstance(item, str):
-            if current_element is parent:
-                if parent.text is None:
-                    parent.text = item
-                else:
-                    parent.text += item
-            else:
-                if current_element.tail is None:
-                    current_element.tail = item
-                else:
-                    current_element.tail += item
-
-        elif isinstance(item, HTMLTag):
-            tag_element = Element(item.name)
-            for attr, value in item.attributes:
-                tag_element.set(attr, value)
-            _render_inline_content(context, tag_element, item.content)
-            parent.append(tag_element)
-            current_element = tag_element
-
-        elif isinstance(item, Formula):
-            formula_element = process_formula(context, item, inline_mode=True)
-            if formula_element is not None:
-                parent.append(formula_element)
-                current_element = formula_element
-
-        elif isinstance(item, Mark):
-            from .xml_utils import set_epub_type
-            anchor = Element("a")
-            anchor.attrib = {
-                "id": f"ref-{item.id}",
-                "href": f"#fn-{item.id}",
-                "class": "super",
-            }
-            set_epub_type(anchor, "noteref")
-            anchor.text = f"[{item.id}]"
-            parent.append(anchor)
-            current_element = anchor
-
-def _wrap_asset_with_title_caption(
-    context: Context,
-    asset: BasicAsset,
-    content_element: Element | None,
-) -> Element | None:
-    """Wrap asset content with title and caption if present."""
-    if content_element is None:
-        return None
-
-    # If no title and no caption, return content as-is
-    if not asset.title and not asset.caption:
-        return content_element
-
-    # Create container
-    container = Element("div", attrib={"class": "asset-container"})
-
-    # Add title if present
-    if asset.title:
-        title_div = Element("div", attrib={"class": "asset-title"})
-        _render_inline_content(context, title_div, asset.title)
-        container.append(title_div)
-
-    # Add content
-    container.append(content_element)
-
-    # Add caption if present
-    if asset.caption:
-        caption_div = Element("div", attrib={"class": "asset-caption"})
-        _render_inline_content(context, caption_div, asset.caption)
-        container.append(caption_div)
-
-    return container
 
 def process_table(context: Context, table: Table) -> Element | None:
     if context.table_render == TableRender.CLIPPING:
@@ -281,3 +202,37 @@ def _normalize_expression(expression: str) -> str:
     expression = expression.replace("\n", "")
     expression = expression.strip()
     return expression
+
+
+def _wrap_asset_with_title_caption(
+    context: Context,
+    asset: BasicAsset,
+    content_element: Element | None,
+) -> Element | None:
+    """Wrap asset content with title and caption if present."""
+    if content_element is None:
+        return None
+
+    # If no title and no caption, return content as-is
+    if not asset.title and not asset.caption:
+        return content_element
+
+    # Create container
+    container = Element("div", attrib={"class": "asset-container"})
+
+    # Add title if present
+    if asset.title:
+        title_div = Element("div", attrib={"class": "asset-title"})
+        render_inline_content(context, title_div, asset.title)
+        container.append(title_div)
+
+    # Add content
+    container.append(content_element)
+
+    # Add caption if present
+    if asset.caption:
+        caption_div = Element("div", attrib={"class": "asset-caption"})
+        render_inline_content(context, caption_div, asset.caption)
+        container.append(caption_div)
+
+    return container

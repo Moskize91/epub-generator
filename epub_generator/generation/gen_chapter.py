@@ -7,14 +7,13 @@ from ..types import (
     Chapter,
     ContentBlock,
     Formula,
-    HTMLTag,
     Image,
-    Mark,
     Table,
     TextBlock,
     TextKind,
 )
 from .gen_asset import process_formula, process_image, process_table
+from .gen_content import render_inline_content
 from .xml_utils import serialize_element, set_epub_type
 
 _MAX_HEADING_LEVEL = 6 # HTML standard defines heading levels from h1 to h6
@@ -102,7 +101,7 @@ def _render_content_block(context: Context, block: ContentBlock) -> Element | No
         else:
             raise ValueError(f"Unknown TextKind: {block.kind}")
 
-        _render_text_content(
+        render_inline_content(
             context=context,
             parent=container,
             content=block.content,
@@ -125,56 +124,3 @@ def _render_content_block(context: Context, block: ContentBlock) -> Element | No
 
     else:
         return None
-
-
-def _render_text_content(context: Context, parent: Element, content: list[str | Mark | Formula | HTMLTag]) -> None:
-    """Render text content with inline citation marks."""
-    current_element = parent
-    for item in content:
-        if isinstance(item, str):
-            if current_element is parent:
-                if parent.text is None:
-                    parent.text = item
-                else:
-                    parent.text += item
-            else:
-                if current_element.tail is None:
-                    current_element.tail = item
-                else:
-                    current_element.tail += item
-
-        elif isinstance(item, HTMLTag):
-            tag_element = Element(item.name)
-            for attr, value in item.attributes:
-                tag_element.set(attr, value)
-            _render_text_content(
-                context=context,
-                parent=tag_element,
-                content=item.content,
-            )
-            parent.append(tag_element)
-            current_element = tag_element
-
-        elif isinstance(item, Formula):
-            formula_element = process_formula(
-                context=context,
-                formula=item,
-                inline_mode=True,
-            )
-            if formula_element is not None:
-                parent.append(formula_element)
-                current_element = formula_element
-
-        elif isinstance(item, Mark):
-            # EPUB 3.0 noteref with semantic attributes
-            anchor = Element("a")
-            anchor.attrib = {
-                "id": f"ref-{item.id}",
-                "href": f"#fn-{item.id}",
-                "class": "super",
-            }
-            # Set epub:type using utility function (avoids global namespace pollution)
-            set_epub_type(anchor, "noteref")
-            anchor.text = f"[{item.id}]"
-            parent.append(anchor)
-            current_element = anchor
