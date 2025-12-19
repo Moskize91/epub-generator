@@ -24,7 +24,7 @@ def gen_nav(
     if first_ref:
         first_chapter_file = first_ref.file_name
     if has_head_chapter and epub_data.get_head:
-        head_chapter_title = "Preface"  # TODO: 支持 i18n
+        head_chapter_title = i18n.preface
 
     return template.render(
         template="nav.xhtml",
