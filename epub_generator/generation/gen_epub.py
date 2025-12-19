@@ -12,7 +12,7 @@ from ..options import LaTeXRender, TableRender
 from ..types import Chapter, EpubData, Formula, TextBlock
 from .gen_chapter import generate_chapter
 from .gen_nav import gen_nav
-from .gen_toc import NavPoint, gen_toc
+from .gen_toc import NavPoint, flatten_nav_points, gen_toc
 
 
 def generate_epub(
@@ -123,17 +123,45 @@ def _write_chapters_from_data(
             context.mark_chapter_has_mathml("head.xhtml")
         assert_not_aborted()
 
+    # 递归遍历 NavPoint 树，写入所有实际章节文件
+    _write_nav_points_recursively(
+        context=context,
+        i18n=i18n,
+        nav_points=nav_points,
+        latex_render=latex_render,
+        assert_not_aborted=assert_not_aborted,
+    )
+
+
+def _write_nav_points_recursively(
+    context: Context,
+    i18n: I18N,
+    nav_points: list[NavPoint],
+    latex_render: LaTeXRender,
+    assert_not_aborted: Callable[[], None],
+) -> None:
+    """递归遍历 NavPoint 树，写入所有实际章节文件"""
     for nav_point in nav_points:
-        if nav_point.get_chapter is not None:
-            chapter = nav_point.get_chapter()
+        # 只处理有文件的节点
+        if nav_point.ref is not None:
+            chapter = nav_point.ref.get_chapter()
             data = generate_chapter(context, chapter, i18n)
             context.file.writestr(
-                zinfo_or_arcname="OEBPS/Text/" + nav_point.file_name,
+                zinfo_or_arcname="OEBPS/Text/" + nav_point.ref.file_name,
                 data=data.encode("utf-8"),
             )
             if latex_render == LaTeXRender.MATHML and _chapter_has_formula(chapter):
-                context.mark_chapter_has_mathml(nav_point.file_name)
+                context.mark_chapter_has_mathml(nav_point.ref.file_name)
             assert_not_aborted()
+
+        # 递归处理子节点
+        _write_nav_points_recursively(
+            context=context,
+            i18n=i18n,
+            nav_points=nav_point.children,
+            latex_render=latex_render,
+            assert_not_aborted=assert_not_aborted,
+        )
 
 
 def _chapter_has_formula(chapter: Chapter) -> bool:
@@ -175,10 +203,13 @@ def _write_basic_files(
     else:
         modified_timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
+    # 展平 NavPoint 树为 NavPointRef 列表，用于模板遍历
+    flat_refs = flatten_nav_points(nav_points)
+
     chapters_with_mathml = {
-        nav_point.file_name
-        for nav_point in nav_points
-        if context.chapter_has_mathml(nav_point.file_name)
+        ref.file_name
+        for ref in flat_refs
+        if context.chapter_has_mathml(ref.file_name)
     }
     content = context.template.render(
         template="content.opf",
@@ -186,7 +217,7 @@ def _write_basic_files(
         i18n=i18n,
         ISBN=isbn,
         modified_timestamp=modified_timestamp,
-        nav_points=nav_points,
+        nav_points=flat_refs,  # 传入 NavPointRef 列表
         has_head_chapter=has_head_chapter,
         has_cover=has_cover,
         asset_files=context.used_files,

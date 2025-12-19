@@ -2,7 +2,7 @@ from html import escape
 
 from ..context import Template
 from ..i18n import I18N
-from ..types import BookMeta, EpubData, TocItem
+from ..types import BookMeta, EpubData
 from .gen_toc import NavPoint
 
 
@@ -15,8 +15,8 @@ def gen_nav(
 ) -> str:
     meta: BookMeta | None = epub_data.meta
     has_head_chapter = epub_data.get_head is not None
-    toc_list = _generate_toc_list(epub_data.prefaces, epub_data.chapters, nav_points)
-    first_chapter_file = nav_points[0].file_name if nav_points else None
+    toc_list = _generate_toc_from_nav_points(nav_points)
+    first_chapter_file = _find_first_file(nav_points)
     head_chapter_title = ""
     if has_head_chapter and epub_data.get_head:
         # Try to extract title from first heading if available
@@ -34,49 +34,34 @@ def gen_nav(
     )
 
 
-def _generate_toc_list(
-    prefaces: list[TocItem],
-    chapters: list[TocItem],
-    nav_points: list[NavPoint],
-) -> str:
-    nav_point_index = 0
-
+def _generate_toc_from_nav_points(nav_points: list[NavPoint]) -> str:
+    """直接从 NavPoint 树生成 TOC HTML"""
     html_parts = []
-    for chapters_list in (prefaces, chapters):
-        for toc_item in chapters_list:
-            nav_point_index, item_html = _generate_toc_item(
-                toc_item, nav_points, nav_point_index
-            )
-            html_parts.append(item_html)
-
+    for nav_point in nav_points:
+        item_html = _generate_toc_item(nav_point)
+        html_parts.append(item_html)
     return "\n".join(html_parts)
 
 
-def _generate_toc_item(
-    toc_item: TocItem,
-    nav_points: list[NavPoint],
-    nav_point_index: int,
-) -> tuple[int, str]:
-    title_escaped = escape(toc_item.title)
-    file_name = None
-    if toc_item.get_chapter is not None and nav_point_index < len(nav_points):
-        file_name = nav_points[nav_point_index].file_name
-        nav_point_index += 1
+def _generate_toc_item(nav_point: NavPoint) -> str:
+    """递归生成单个 TOC 条目"""
+    title_escaped = escape(nav_point.title)
 
+    # 递归生成子节点 HTML
     children_html = []
-    for child in toc_item.children:
-        nav_point_index, child_html = _generate_toc_item(
-            child, nav_points, nav_point_index
-        )
+    for child in nav_point.children:
+        child_html = _generate_toc_item(child)
         children_html.append(child_html)
 
-    if file_name is None and children_html:
-        if nav_point_index > 0:
-            for i in range(nav_point_index - len(toc_item.children), nav_point_index):
-                if i < len(nav_points):
-                    file_name = nav_points[i].file_name
-                    break
+    # 决定链接目标
+    if nav_point.ref is not None:
+        # 有文件，直接链接
+        file_name = nav_point.ref.file_name
+    else:
+        # 占位节点，链接到第一个子章节（如果有）
+        file_name = _find_first_file(nav_point.children)
 
+    # 生成 HTML
     if file_name:
         html_parts = [f'      <li>\n        <a href="Text/{file_name}">{title_escaped}</a>']
     else:
@@ -89,4 +74,16 @@ def _generate_toc_item(
 
     html_parts.append('      </li>')
 
-    return nav_point_index, "\n".join(html_parts)
+    return "\n".join(html_parts)
+
+
+def _find_first_file(nav_points: list[NavPoint]) -> str | None:
+    """递归查找第一个有实际文件的章节"""
+    for nav_point in nav_points:
+        if nav_point.ref is not None:
+            return nav_point.ref.file_name
+        # 递归查找子节点
+        result = _find_first_file(nav_point.children)
+        if result:
+            return result
+    return None
