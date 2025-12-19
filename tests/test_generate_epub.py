@@ -437,6 +437,79 @@ class TestGenerateEpub(unittest.TestCase):
         success, output = self._run_epubcheck(output_path)
         self.assertTrue(success, f"epubcheck failed:\n{output}")
 
+    def test_epub_with_formulas_in_asset_captions(self):
+        """Test EPUB with formulas in asset captions and titles (MathML)."""
+        test_image_path = self.asset_dir / "test_image.png"
+
+        epub_data = EpubData(
+            meta=BookMeta(title="Book with Formulas in Captions"),
+            chapters=[
+                TocItem(
+                    title="Chapter 1",
+                    get_chapter=lambda: Chapter(
+                        elements=[
+                            TextBlock(kind=TextKind.BODY, level=0, content=["An image with formula in caption:"]),
+                            Image(
+                                path=test_image_path,
+                                caption=[
+                                    "This image shows ",
+                                    Formula(latex_expression="E = mc^2"),
+                                    " in action.",
+                                ],
+                            ),
+                            TextBlock(
+                                kind=TextKind.BODY,
+                                level=0,
+                                content=[
+                                    "A table with formula in title",
+                                    Mark(id=1),
+                                    ":",
+                                ],
+                            ),
+                            Table(
+                                title=[
+                                    "Table of ",
+                                    Formula(latex_expression=r"\alpha"),
+                                    " values",
+                                ],
+                                caption=[
+                                    "Values of ",
+                                    Formula(latex_expression=r"\beta"),
+                                ],
+                                html_content=HTMLTag(
+                                    name="table",
+                                    content=[
+                                        HTMLTag(name="tr", content=[HTMLTag(name="td", content=["Value"])]),
+                                    ]
+                                )
+                            ),
+                        ],
+                        footnotes=[
+                            Footnote(
+                                id=1,
+                                contents=[
+                                    Image(
+                                        path=test_image_path,
+                                        caption=[
+                                            "Footnote image with ",
+                                            Formula(latex_expression=r"\gamma"),
+                                        ],
+                                    ),
+                                ],
+                            ),
+                        ],
+                    ),
+                ),
+            ],
+        )
+
+        output_path = self.temp_dir / "with_formulas_in_captions.epub"
+        generate_epub(epub_data, output_path, latex_render=LaTeXRender.MATHML)
+
+        self.assertTrue(output_path.exists())
+        success, output = self._run_epubcheck(output_path)
+        self.assertTrue(success, f"epubcheck failed:\n{output}")
+
     def test_epub_complex_structure(self):
         """Test EPUB with complex structure (everything combined)."""
         cover_path = self.asset_dir / "test_cover.png"
