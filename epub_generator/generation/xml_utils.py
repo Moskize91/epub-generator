@@ -1,4 +1,5 @@
 import re
+from typing import Container
 from xml.etree.ElementTree import Element, tostring
 
 _EPUB_NS = "http://www.idpf.org/2007/ops"
@@ -29,3 +30,25 @@ def serialize_element(element: Element) -> str:
             xml_string = xml_string.replace(f"{ns_prefix}:", f"{prefix}:")
 
     return xml_string
+
+def indent(elem: Element, level: int = 0, skip_tags: Container[str] = ()) -> Element:
+    indent_str = "  " * level
+    next_indent_str = "  " * (level + 1)
+
+    if elem.tag in skip_tags:
+        if level > 0 and (not elem.tail or not elem.tail.strip()):
+            elem.tail = "\n" + indent_str
+        return elem
+
+    if len(elem):
+        if not elem.text or not elem.text.strip():
+            elem.text = "\n" + next_indent_str
+        for i, child in enumerate(elem):
+            indent(child, level + 1, skip_tags)
+            if i < len(elem) - 1:
+                child.tail = "\n" + next_indent_str
+            else:
+                child.tail = "\n" + indent_str
+    elif level > 0 and (not elem.tail or not elem.tail.strip()):
+        elem.tail = "\n" + indent_str
+    return elem
