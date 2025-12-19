@@ -12,7 +12,7 @@ from ..types import (
     TextBlock,
     TextKind,
 )
-from .gen_asset import process_formula, process_image, process_table
+from .gen_asset import render_asset_block
 from .gen_content import render_inline_content
 from .xml_utils import serialize_element, set_epub_type
 
@@ -90,7 +90,10 @@ def _render_footnotes(
 
 
 def _render_content_block(context: Context, block: ContentBlock) -> Element | None:
-    if isinstance(block, TextBlock):
+    if isinstance(block, Table | Formula | Image):
+        return render_asset_block(context, block)
+
+    elif isinstance(block, TextBlock):
         if block.kind == TextKind.HEADLINE:
             heading_level = min(block.level + 1, _MAX_HEADING_LEVEL)
             container = Element(f"h{heading_level}")
@@ -112,15 +115,6 @@ def _render_content_block(context: Context, block: ContentBlock) -> Element | No
             return blockquote
 
         return container
-
-    elif isinstance(block, Table):
-        return process_table(context, block)
-
-    elif isinstance(block, Formula):
-        return process_formula(context, block, inline_mode=False)
-
-    elif isinstance(block, Image):
-        return process_image(context, block)
-
+    
     else:
         return None

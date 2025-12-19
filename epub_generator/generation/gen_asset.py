@@ -20,8 +20,26 @@ _MEDIA_TYPE_MAP = {
 }
 
 
-def process_table(context: Context, table: Table) -> Element | None:
-    # TODO 返回 None 很奇怪，而且 CLIPPING 不是这么用的
+def render_inline_formula(context: Context, formula: Formula) -> Element | None:
+    return _render_formula(
+        context=context, 
+        formula=formula, 
+        inline_mode=True,
+    )
+
+
+def render_asset_block(context: Context, block: Table | Formula | Image) -> Element | None: 
+    element: Element | None = None
+    if isinstance(block, Table):
+        element = _render_table(context, block)
+    elif isinstance(block, Formula):
+        element = _render_formula(context, block, inline_mode=False)
+    elif isinstance(block, Image):
+        element = _process_image(context, block)
+    return element
+
+
+def _render_table(context: Context, table: Table) -> Element | None:
     if context.table_render == TableRender.CLIPPING:
         return None
 
@@ -32,7 +50,7 @@ def process_table(context: Context, table: Table) -> Element | None:
     )
 
 
-def process_formula(
+def _render_formula(
         context: Context,
         formula: Formula,
         inline_mode: bool,
@@ -75,7 +93,8 @@ def process_formula(
         inline_mode=inline_mode,
     )
 
-def process_image(context: Context, image: Image) -> Element | None:
+
+def _process_image(context: Context, image: Image) -> Element:
     file_ext = image.path.suffix or ".png"
     file_name = context.use_asset(
         source_path=image.path,
@@ -92,8 +111,14 @@ def process_image(context: Context, image: Image) -> Element | None:
         content_element=img_element,
     )
 
+def _normalize_expression(expression: str) -> str:
+    expression = expression.replace("\n", "")
+    expression = expression.strip()
+    return expression
+
 
 _ESCAPE_UNICODE_PATTERN = re.compile(r"&#x([0-9A-Fa-f]{5});")
+
 
 def _latex2mathml(latex: str, inline_mode: bool) -> None | Element:
     try:
@@ -149,13 +174,7 @@ def _latex_formula2svg(latex: str, font_size: int = 12):
         return output.getvalue()
     except Exception:
         return None
-
-
-def _normalize_expression(expression: str) -> str:
-    expression = expression.replace("\n", "")
-    expression = expression.strip()
-    return expression
-
+    
 
 def _wrap_asset_content(
     context: Context,

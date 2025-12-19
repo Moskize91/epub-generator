@@ -2,6 +2,7 @@ from xml.etree.ElementTree import Element
 
 from ..context import Context
 from ..types import Formula, HTMLTag, Mark
+from .xml_utils import set_epub_type
 
 
 def render_inline_content(
@@ -29,15 +30,13 @@ def render_inline_content(
             current_element = tag_element
 
         elif isinstance(item, Formula):
-            # Import here to avoid circular dependency
-            from .gen_asset import process_formula
-            formula_element = process_formula(context, item, inline_mode=True)
+            from .gen_asset import render_inline_formula  # avoid circular import
+            formula_element = render_inline_formula(context, item)
             if formula_element is not None:
                 parent.append(formula_element)
                 current_element = formula_element
 
         elif isinstance(item, Mark):
-            from .xml_utils import set_epub_type
             # EPUB 3.0 noteref with semantic attributes
             anchor = Element("a")
             anchor.attrib = {
