@@ -1,4 +1,3 @@
-"""Shared content rendering utilities for EPUB generation."""
 from xml.etree.ElementTree import Element
 
 from ..context import Context
@@ -10,20 +9,6 @@ def render_inline_content(
     parent: Element,
     content: list[str | Mark | Formula | HTMLTag]
 ) -> None:
-    """Render inline content with marks, formulas, and HTML tags.
-
-    This function processes a list of content items and appends them to the parent
-    element. It handles:
-    - Plain text strings
-    - Mark (footnote references)
-    - Formula (inline mathematical expressions)
-    - HTMLTag (nested HTML elements)
-
-    Args:
-        context: The EPUB generation context
-        parent: The parent XML element to append content to
-        content: List of content items to render
-    """
     current_element = parent
     for item in content:
         if isinstance(item, str):
@@ -39,10 +24,7 @@ def render_inline_content(
                     current_element.tail += item
 
         elif isinstance(item, HTMLTag):
-            tag_element = Element(item.name)
-            for attr, value in item.attributes:
-                tag_element.set(attr, value)
-            render_inline_content(context, tag_element, item.content)
+            tag_element = render_html_tag(context, item)
             parent.append(tag_element)
             current_element = tag_element
 
@@ -67,3 +49,12 @@ def render_inline_content(
             anchor.text = f"[{item.id}]"
             parent.append(anchor)
             current_element = anchor
+
+
+def render_html_tag(context: Context, tag: HTMLTag) -> Element:
+    """Convert HTMLTag to XML Element with full inline content support."""
+    element = Element(tag.name)
+    for attr, value in tag.attributes:
+        element.set(attr, value)
+    render_inline_content(context, element, tag.content)
+    return element

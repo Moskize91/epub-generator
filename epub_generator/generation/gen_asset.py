@@ -8,8 +8,8 @@ from latex2mathml.converter import convert
 
 from ..context import Context
 from ..options import LaTeXRender, TableRender
-from ..types import BasicAsset, Formula, HTMLTag, Image, Table
-from .gen_content import render_inline_content
+from ..types import BasicAsset, Formula, Image, Table
+from .gen_content import render_html_tag, render_inline_content
 
 _MEDIA_TYPE_MAP = {
     ".png": "image/png",
@@ -19,59 +19,17 @@ _MEDIA_TYPE_MAP = {
     ".svg": "image/svg+xml",
 }
 
+
 def process_table(context: Context, table: Table) -> Element | None:
+    # TODO 返回 None 很奇怪，而且 CLIPPING 不是这么用的
     if context.table_render == TableRender.CLIPPING:
         return None
 
-    # Convert HTMLTag to actual HTML element
-    try:
-        # Render the HTMLTag to an Element
-        if isinstance(table.html_content, HTMLTag):
-            table_element = _render_html_tag(table.html_content)
-        else:
-            # Fallback for backward compatibility (shouldn't happen with new types)
-            wrapped_html = f"<div>{table.html_content}</div>"
-            parsed = fromstring(wrapped_html)
-            table_element = parsed[0] if len(parsed) > 0 else None
-
-        if table_element is None:
-            return None
-
-        wrapper = Element("div", attrib={"class": "alt-wrapper"})
-        wrapper.append(table_element)
-
-        # Wrap with title/caption if present
-        return _wrap_asset_with_title_caption(context, table, wrapper)
-    except Exception:
-        return None
-
-def _render_html_tag(tag: HTMLTag) -> Element:
-    """Convert HTMLTag to XML Element."""
-    element = Element(tag.name)
-    for attr, value in tag.attributes:
-        element.set(attr, value)
-
-    # Render content
-    current_element = element
-    for item in tag.content:
-        if isinstance(item, str):
-            if current_element is element:
-                if element.text is None:
-                    element.text = item
-                else:
-                    element.text += item
-            else:
-                if current_element.tail is None:
-                    current_element.tail = item
-                else:
-                    current_element.tail += item
-        elif isinstance(item, HTMLTag):
-            child = _render_html_tag(item)
-            element.append(child)
-            current_element = child
-        # Note: Formula and Mark in table content are not supported yet
-
-    return element
+    return _wrap_asset_content(
+        context=context, 
+        asset=table, 
+        content_element=render_html_tag(context, table.html_content),
+    )
 
 
 def process_formula(
@@ -105,21 +63,17 @@ def process_formula(
         img_element = Element("img")
         img_element.set("src", f"../assets/{file_name}")
         img_element.set("alt", "formula")
+        content_element = img_element
 
-        if inline_mode:
-            wrapper = Element("span", attrib={"class": "formula-inline"})
-        else:
-            wrapper = Element("div", attrib={"class": "alt-wrapper"})
+    if content_element is None:
+        return None
 
-        wrapper.append(img_element)
-        content_element = wrapper
-
-    # For inline formulas, don't wrap with title/caption
-    if inline_mode or content_element is None:
-        return content_element
-
-    # For block formulas, wrap with title/caption if present
-    return _wrap_asset_with_title_caption(context, formula, content_element)
+    return _wrap_asset_content(
+        context=context,
+        asset=formula, 
+        content_element=content_element,
+        inline_mode=inline_mode,
+    )
 
 def process_image(context: Context, image: Image) -> Element | None:
     file_ext = image.path.suffix or ".png"
@@ -132,15 +86,14 @@ def process_image(context: Context, image: Image) -> Element | None:
     img_element.set("src", f"../assets/{file_name}")
     img_element.set("alt", "")  # Empty alt text, use caption instead
 
-    wrapper = Element("div", attrib={"class": "alt-wrapper"})
-    wrapper.append(img_element)
-
-    # Wrap with title/caption if present
-    return _wrap_asset_with_title_caption(context, image, wrapper)
+    return _wrap_asset_content(
+        context=context, 
+        asset=image, 
+        content_element=img_element,
+    )
 
 
 _ESCAPE_UNICODE_PATTERN = re.compile(r"&#x([0-9A-Fa-f]{5});")
-
 
 def _latex2mathml(latex: str, inline_mode: bool) -> None | Element:
     try:
@@ -204,32 +157,30 @@ def _normalize_expression(expression: str) -> str:
     return expression
 
 
-def _wrap_asset_with_title_caption(
+def _wrap_asset_content(
     context: Context,
     asset: BasicAsset,
-    content_element: Element | None,
-) -> Element | None:
-    """Wrap asset content with title and caption if present."""
-    if content_element is None:
-        return None
+    content_element: Element,
+    inline_mode: bool = False,
+) -> Element:
+    
+    if inline_mode:
+        wrapper = Element("span", attrib={"class": "formula-inline"})
+    else:
+        wrapper = Element("div", attrib={"class": "alt-wrapper"})
 
-    # If no title and no caption, return content as-is
+    wrapper.append(content_element)
+
     if not asset.title and not asset.caption:
-        return content_element
+        return wrapper
 
-    # Create container
-    container = Element("div", attrib={"class": "asset-container"})
-
-    # Add title if present
+    container = Element("div", attrib={"class": "asset"})
     if asset.title:
         title_div = Element("div", attrib={"class": "asset-title"})
         render_inline_content(context, title_div, asset.title)
         container.append(title_div)
 
-    # Add content
-    container.append(content_element)
-
-    # Add caption if present
+    container.append(wrapper)
     if asset.caption:
         caption_div = Element("div", attrib={"class": "asset-caption"})
         render_inline_content(context, caption_div, asset.caption)
