@@ -87,9 +87,9 @@ class Mark:
 class BasicAsset:
     """Asset as a base class for other assets."""
 
-    title: list["str | Mark | Formula | HTMLTag"]
+    title: list["str | Mark | Formula | HTMLTag"] = field(default_factory=list, kw_only=True)
     """Asset title (before content)"""
-    caption: list["str | Mark | Formula | HTMLTag"]
+    caption: list["str | Mark | Formula | HTMLTag"] = field(default_factory=list, kw_only=True)
     """Asset caption (after content)"""
 
 @dataclass
