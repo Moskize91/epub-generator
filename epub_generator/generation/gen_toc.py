@@ -1,24 +1,15 @@
-from dataclasses import dataclass, field
-from typing import Any, Callable
+from dataclasses import dataclass
+from typing import Any, Callable, Generator
 
 from ..types import EpubData, TocItem
 
 
 @dataclass
-class NavPointRef:
-    """NavPoint 的文件引用，只有实际章节才有"""
-    toc_id: int
-    file_name: str
+class TocPoint:
+    title: str
     order: int
-    get_chapter: Callable[[], Any]  # 不再允许 None
-
-
-@dataclass
-class NavPoint:
-    """目录节点，支持树型结构"""
-    title: str  # 章节标题
-    ref: NavPointRef | None = None  # 实际文件引用（占位节点为 None）
-    children: list["NavPoint"] = field(default_factory=list)  # 子节点
+    ref: "TocPointRef | None"
+    children: list["TocPoint"]
 
     @property
     def is_placeholder(self) -> bool:
@@ -30,44 +21,37 @@ class NavPoint:
         """是否有对应的 XHTML 文件"""
         return self.ref is not None
 
+@dataclass
+class TocPointRef:
+    part_id: str
+    file_name: str
+    get_chapter: Callable[[], Any]
 
-def gen_toc(
-    epub_data: EpubData,
-    has_cover: bool = False,
-) -> list[NavPoint]:
+
+def iter_toc(toc_points: list[TocPoint]) -> Generator[TocPointRef, None, None]:
+    for toc_point in toc_points:
+        if toc_point.ref:
+            yield toc_point.ref
+        yield from iter_toc(toc_point.children)
+
+
+def gen_toc(epub_data: EpubData) -> list[TocPoint]:
     prefaces = epub_data.prefaces
     chapters = epub_data.chapters
 
-    nav_point_generation = _NavPointGenerator(
-        has_cover=has_cover,
+    toc_point_generation = _TocPointGenerator(
         chapters_count=(
             _count_toc_items(prefaces) +
             _count_toc_items(chapters)
         ),
     )
-    nav_points: list[NavPoint] = []
+    toc_points: list[TocPoint] = []
     for chapters_list in (prefaces, chapters):
         for toc_item in chapters_list:
-            nav_point = nav_point_generation.generate(toc_item)
-            nav_points.append(nav_point)
+            toc_point = toc_point_generation.generate(toc_item)
+            toc_points.append(toc_point)
 
-    return nav_points
-
-
-def flatten_nav_points(nav_points: list[NavPoint]) -> list[NavPointRef]:
-    """将 NavPoint 树展平为 NavPointRef 列表，按深度优先顺序，只包含有实际文件的节点"""
-    result: list[NavPointRef] = []
-
-    def _flatten(nav_point: NavPoint) -> None:
-        if nav_point.ref is not None:
-            result.append(nav_point.ref)
-        for child in nav_point.children:
-            _flatten(child)
-
-    for nav_point in nav_points:
-        _flatten(nav_point)
-
-    return result
+    return toc_points
 
 
 def _count_toc_items(items: list[TocItem]) -> int:
@@ -87,38 +71,35 @@ def _max_depth_toc_items(items: list[TocItem]) -> int:
     return max_depth
 
 
-class _NavPointGenerator:
-    def __init__(self, has_cover: bool, chapters_count: int):
-        self._next_order: int = 2 if has_cover else 1
+class _TocPointGenerator:
+    def __init__(self, chapters_count: int):
+        self._next_order: int = 0
         self._next_id: int = 1
         self._digits = len(str(chapters_count))
 
-    def generate(self, toc_item: TocItem) -> NavPoint:
-        return self._create_nav_point(toc_item)
+    def generate(self, toc_item: TocItem) -> TocPoint:
+        return self._create_toc_point(toc_item)
 
-    def _create_nav_point(self, toc_item: TocItem) -> NavPoint:
-        # 递归处理子节点
-        children: list[NavPoint] = []
-        for child in toc_item.children:
-            child_nav_point = self._create_nav_point(child)
-            children.append(child_nav_point)
-
-        # 创建当前节点
+    def _create_toc_point(self, toc_item: TocItem) -> TocPoint:
+        ref: TocPointRef | None = None
         if toc_item.get_chapter is not None:
-            # 有实际文件的节点
-            toc_id = self._next_id
+            part_id = self._next_id
             self._next_id += 1
-            part_id = str(toc_id).zfill(self._digits)
-
-            ref = NavPointRef(
-                toc_id=toc_id,
+            part_id = str(part_id).zfill(self._digits)
+            ref = TocPointRef(
+                part_id=part_id,
                 file_name=f"part{part_id}.xhtml",
-                order=self._next_order,
                 get_chapter=toc_item.get_chapter,
             )
-            self._next_order += 1
+        order = self._next_order # 确保 order 以中序遍历为顺序
+        self._next_order += 1
 
-            return NavPoint(title=toc_item.title, ref=ref, children=children)
-        else:
-            # 占位节点
-            return NavPoint(title=toc_item.title, ref=None, children=children)
+        return TocPoint(
+            title=toc_item.title, 
+            order=order,
+            ref=ref, 
+            children=[
+                self._create_toc_point(child)
+                for child in toc_item.children
+            ],
+        )

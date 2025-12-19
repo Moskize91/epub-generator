@@ -12,7 +12,7 @@ from ..options import LaTeXRender, TableRender
 from ..types import Chapter, EpubData, Formula, TextBlock
 from .gen_chapter import generate_chapter
 from .gen_nav import gen_nav
-from .gen_toc import NavPoint, flatten_nav_points, gen_toc
+from .gen_toc import TocPoint, gen_toc, iter_toc
 
 
 def generate_epub(
@@ -26,10 +26,8 @@ def generate_epub(
     i18n = I18N(lan)
     template = Template()
     epub_file_path = Path(epub_file_path)
-
-    # Generate navigation points from TOC structure
     has_cover = epub_data.cover_image_path is not None
-    nav_points = gen_toc(epub_data=epub_data, has_cover=has_cover)
+    toc_points = gen_toc(epub_data=epub_data)
 
     epub_file_path.parent.mkdir(parents=True, exist_ok=True)
 
@@ -49,7 +47,7 @@ def generate_epub(
         _write_chapters_from_data(
             context=context,
             i18n=i18n,
-            nav_points=nav_points,
+            toc_points=toc_points,
             epub_data=epub_data,
             latex_render=latex_render,
             assert_not_aborted=assert_not_aborted,
@@ -58,7 +56,7 @@ def generate_epub(
             template=template,
             i18n=i18n,
             epub_data=epub_data,
-            nav_points=nav_points,
+            toc_points=toc_points,
             has_cover=has_cover,
         )
         file.writestr(
@@ -71,7 +69,7 @@ def generate_epub(
             context=context,
             i18n=i18n,
             epub_data=epub_data,
-            nav_points=nav_points,
+            toc_points=toc_points,
         )
         assert_not_aborted()
 
@@ -80,6 +78,7 @@ def generate_epub(
             i18n=i18n,
             epub_data=epub_data,
         )
+
 
 def _write_assets_from_data(
     context: Context,
@@ -104,64 +103,32 @@ def _write_assets_from_data(
                 arcname="OEBPS/assets/cover.png",
             )
 
+
 def _write_chapters_from_data(
     context: Context,
     i18n: I18N,
-    nav_points: list[NavPoint],
+    toc_points: list[TocPoint],
     epub_data: EpubData,
     latex_render: LaTeXRender,
     assert_not_aborted: Callable[[], None],
 ):
-    if epub_data.get_head is not None:
-        chapter = epub_data.get_head()
+    for file_name, get_chapter in _search_chapters(epub_data, toc_points):
+        chapter = get_chapter()
         data = generate_chapter(context, chapter, i18n)
         context.file.writestr(
-            zinfo_or_arcname="OEBPS/Text/head.xhtml",
+            zinfo_or_arcname="OEBPS/Text/" + file_name,
             data=data.encode("utf-8"),
         )
         if latex_render == LaTeXRender.MATHML and _chapter_has_formula(chapter):
             context.mark_chapter_has_mathml("head.xhtml")
         assert_not_aborted()
 
-    # 递归遍历 NavPoint 树，写入所有实际章节文件
-    _write_nav_points_recursively(
-        context=context,
-        i18n=i18n,
-        nav_points=nav_points,
-        latex_render=latex_render,
-        assert_not_aborted=assert_not_aborted,
-    )
 
-
-def _write_nav_points_recursively(
-    context: Context,
-    i18n: I18N,
-    nav_points: list[NavPoint],
-    latex_render: LaTeXRender,
-    assert_not_aborted: Callable[[], None],
-) -> None:
-    """递归遍历 NavPoint 树，写入所有实际章节文件"""
-    for nav_point in nav_points:
-        # 只处理有文件的节点
-        if nav_point.ref is not None:
-            chapter = nav_point.ref.get_chapter()
-            data = generate_chapter(context, chapter, i18n)
-            context.file.writestr(
-                zinfo_or_arcname="OEBPS/Text/" + nav_point.ref.file_name,
-                data=data.encode("utf-8"),
-            )
-            if latex_render == LaTeXRender.MATHML and _chapter_has_formula(chapter):
-                context.mark_chapter_has_mathml(nav_point.ref.file_name)
-            assert_not_aborted()
-
-        # 递归处理子节点
-        _write_nav_points_recursively(
-            context=context,
-            i18n=i18n,
-            nav_points=nav_point.children,
-            latex_render=latex_render,
-            assert_not_aborted=assert_not_aborted,
-        )
+def _search_chapters(epub_data: EpubData, toc_points: list[TocPoint]):
+    if epub_data.get_head is not None:
+        yield "head.xhtml", epub_data.get_head
+    for ref in iter_toc(toc_points):
+        yield ref.file_name, ref.get_chapter
 
 
 def _chapter_has_formula(chapter: Chapter) -> bool:
@@ -183,11 +150,12 @@ def _chapter_has_formula(chapter: Chapter) -> bool:
                         return True
     return False
 
+
 def _write_basic_files(
     context: Context,
     i18n: I18N,
     epub_data: EpubData,
-    nav_points: list[NavPoint],
+    toc_points: list[TocPoint],
 ):
     meta = epub_data.meta
     has_cover = epub_data.cover_image_path is not None
@@ -203,25 +171,18 @@ def _write_basic_files(
     else:
         modified_timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
-    # 展平 NavPoint 树为 NavPointRef 列表，用于模板遍历
-    flat_refs = flatten_nav_points(nav_points)
-
-    chapters_with_mathml = {
-        ref.file_name
-        for ref in flat_refs
-        if context.chapter_has_mathml(ref.file_name)
-    }
+    toc_refs = list(iter_toc(toc_points))
     content = context.template.render(
         template="content.opf",
         meta=meta,
         i18n=i18n,
         ISBN=isbn,
         modified_timestamp=modified_timestamp,
-        nav_points=flat_refs,  # 传入 NavPointRef 列表
+        nav_points=toc_refs,
         has_head_chapter=has_head_chapter,
         has_cover=has_cover,
         asset_files=context.used_files,
-        chapters_with_mathml=chapters_with_mathml,
+        chapters_with_mathml=context.chapters_with_mathml,
     )
     context.file.writestr(
         zinfo_or_arcname="OEBPS/content.opf",

@@ -55,14 +55,13 @@ class Context:
         nodes = list(self._hash_to_node.values())
         nodes.sort(key=lambda node: node.file_name)
         return [(node.file_name, node.media_type) for node in nodes]
+    
+    @property
+    def chapters_with_mathml(self) -> set[str]:
+        return self._chapters_with_mathml
 
     def mark_chapter_has_mathml(self, chapter_file_name: str) -> None:
-        """Mark a chapter as containing MathML content for EPUB 3.0 manifest properties."""
         self._chapters_with_mathml.add(chapter_file_name)
-
-    def chapter_has_mathml(self, chapter_file_name: str) -> bool:
-        """Check if a chapter contains MathML content."""
-        return chapter_file_name in self._chapters_with_mathml
 
     def use_asset(
         self,
