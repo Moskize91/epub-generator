@@ -9,7 +9,7 @@ from ..context import Context, Template
 from ..html_tag import search_content
 from ..i18n import I18N
 from ..options import LaTeXRender, TableRender
-from ..types import Chapter, EpubData, Formula, TextBlock
+from ..types import BasicAsset, Chapter, ContentBlock, EpubData, Formula, TextBlock
 from .gen_chapter import generate_chapter
 from .gen_nav import gen_nav
 from .gen_toc import TocPoint, gen_toc, iter_toc
@@ -132,22 +132,30 @@ def _search_chapters(epub_data: EpubData, toc_points: list[TocPoint]):
 
 
 def _chapter_has_formula(chapter: Chapter) -> bool:
-    """Check if chapter contains any formulas (block-level or inline)."""
     for element in chapter.elements:
-        if isinstance(element, Formula):
+        if _content_block_has_formula(element):
             return True
-        if isinstance(element, TextBlock):
-            for item in search_content(element.content):
-                if isinstance(item, Formula):
-                    return True
     for footnote in chapter.footnotes:
         for content_block in footnote.contents:
-            if isinstance(content_block, Formula):
+            if _content_block_has_formula(content_block):
                 return True
-            if isinstance(content_block, TextBlock):
-                for item in search_content(content_block.content):
-                    if isinstance(item, Formula):
-                        return True
+    return False
+
+
+def _content_block_has_formula(content_block: ContentBlock) -> bool:
+    if isinstance(content_block, Formula):
+        return True
+    if isinstance(content_block, TextBlock):
+        for item in search_content(content_block.content):
+            if isinstance(item, Formula):
+                return True
+    if isinstance(content_block, BasicAsset):
+        for item in search_content(content_block.title):
+            if isinstance(item, Formula):
+                return True
+        for item in search_content(content_block.caption):
+            if isinstance(item, Formula):
+                return True
     return False
 
 
