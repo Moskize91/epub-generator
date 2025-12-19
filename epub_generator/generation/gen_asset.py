@@ -8,7 +8,8 @@ from latex2mathml.converter import convert
 
 from ..context import Context
 from ..options import LaTeXRender, TableRender
-from ..types import Formula, Image, Table
+from ..types import BasicAsset, Formula, Image, Table
+from .gen_content import render_html_tag, render_inline_content
 
 _MEDIA_TYPE_MAP = {
     ".png": "image/png",
@@ -18,25 +19,40 @@ _MEDIA_TYPE_MAP = {
     ".svg": "image/svg+xml",
 }
 
-def process_table(context: Context, table: Table) -> Element | None:
+
+def render_inline_formula(context: Context, formula: Formula) -> Element | None:
+    return _render_formula(
+        context=context, 
+        formula=formula, 
+        inline_mode=True,
+    )
+
+
+def render_asset_block(context: Context, block: Table | Formula | Image) -> Element | None: 
+    element: Element | None = None
+    if isinstance(block, Table):
+        element = _render_table(context, block)
+    elif isinstance(block, Formula):
+        element = _render_formula(context, block, inline_mode=False)
+    elif isinstance(block, Image):
+        element = _process_image(context, block)
+    return element
+
+
+def _render_table(context: Context, table: Table) -> Element | None:
     if context.table_render == TableRender.CLIPPING:
         return None
-    try:
-        wrapped_html = f"<div>{table.html_content}</div>"
-        parsed = fromstring(wrapped_html)
-        wrapper = Element("div", attrib={"class": "alt-wrapper"})
 
-        for child in parsed:
-            wrapper.append(child)
-
-        return wrapper if len(wrapper) > 0 else None
-    except Exception:
-        return None
+    return _wrap_asset_content(
+        context=context, 
+        asset=table, 
+        content_element=render_html_tag(context, table.html_content),
+    )
 
 
-def process_formula(
-        context: Context, 
-        formula: Formula, 
+def _render_formula(
+        context: Context,
+        formula: Formula,
         inline_mode: bool,
     ) -> Element | None:
 
@@ -47,9 +63,10 @@ def process_formula(
     if not latex_expr:
         return None
 
+    content_element = None
     if context.latex_render == LaTeXRender.MATHML:
-        return _latex2mathml(
-            latex=latex_expr, 
+        content_element = _latex2mathml(
+            latex=latex_expr,
             inline_mode=inline_mode,
         )
     elif context.latex_render == LaTeXRender.SVG:
@@ -64,31 +81,40 @@ def process_formula(
         img_element = Element("img")
         img_element.set("src", f"../assets/{file_name}")
         img_element.set("alt", "formula")
+        content_element = img_element
 
-        if inline_mode:
-            wrapper = Element("span", attrib={"class": "formula-inline"})
-        else:
-            wrapper = Element("div", attrib={"class": "alt-wrapper"})
+    if content_element is None:
+        return None
 
-        wrapper.append(img_element)
-        return wrapper
+    return _wrap_asset_content(
+        context=context,
+        asset=formula, 
+        content_element=content_element,
+        inline_mode=inline_mode,
+    )
 
-    return None
 
-def process_image(context: Context, image: Image) -> Element | None:
+def _process_image(context: Context, image: Image) -> Element:
     file_ext = image.path.suffix or ".png"
     file_name = context.use_asset(
-        source_path=image.path, 
-        media_type=_MEDIA_TYPE_MAP.get(file_ext.lower(), "image/png"), 
+        source_path=image.path,
+        media_type=_MEDIA_TYPE_MAP.get(file_ext.lower(), "image/png"),
         file_ext=file_ext,
     )
     img_element = Element("img")
     img_element.set("src", f"../assets/{file_name}")
-    img_element.set("alt", image.alt_text)
+    img_element.set("alt", "")  # Empty alt text, use caption instead
 
-    wrapper = Element("div", attrib={"class": "alt-wrapper"})
-    wrapper.append(img_element)
-    return wrapper
+    return _wrap_asset_content(
+        context=context, 
+        asset=image, 
+        content_element=img_element,
+    )
+
+def _normalize_expression(expression: str) -> str:
+    expression = expression.replace("\n", "")
+    expression = expression.strip()
+    return expression
 
 
 _ESCAPE_UNICODE_PATTERN = re.compile(r"&#x([0-9A-Fa-f]{5});")
@@ -148,9 +174,35 @@ def _latex_formula2svg(latex: str, font_size: int = 12):
         return output.getvalue()
     except Exception:
         return None
+    
 
+def _wrap_asset_content(
+    context: Context,
+    asset: BasicAsset,
+    content_element: Element,
+    inline_mode: bool = False,
+) -> Element:
+    
+    if inline_mode:
+        wrapper = Element("span", attrib={"class": "formula-inline"})
+    else:
+        wrapper = Element("div", attrib={"class": "alt-wrapper"})
 
-def _normalize_expression(expression: str) -> str:
-    expression = expression.replace("\n", "")
-    expression = expression.strip()
-    return expression
+    wrapper.append(content_element)
+
+    if not asset.title and not asset.caption:
+        return wrapper
+
+    container = Element("div", attrib={"class": "asset"})
+    if asset.title:
+        title_div = Element("div", attrib={"class": "asset-title"})
+        render_inline_content(context, title_div, asset.title)
+        container.append(title_div)
+
+    container.append(wrapper)
+    if asset.caption:
+        caption_div = Element("div", attrib={"class": "asset-caption"})
+        render_inline_content(context, caption_div, asset.caption)
+        container.append(caption_div)
+
+    return container

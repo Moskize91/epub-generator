@@ -9,6 +9,7 @@ from epub_generator import (
     EpubData,
     Footnote,
     Formula,
+    HTMLTag,
     Image,
     LaTeXRender,
     Mark,
@@ -277,9 +278,12 @@ class TestGenerateEpub(unittest.TestCase):
                         elements=[
                             TextBlock(kind=TextKind.BODY, level=0, content=["A table:"]),
                             Table(
-                                html_content=(
-                                    "<table><tr><th>Header</th></tr>"
-                                    "<tr><td>Data</td></tr></table>"
+                                html_content=HTMLTag(
+                                    name="table",
+                                    content=[
+                                        HTMLTag(name="tr", content=[HTMLTag(name="th", content=["Header"])]),
+                                        HTMLTag(name="tr", content=[HTMLTag(name="td", content=["Data"])]),
+                                    ]
                                 )
                             ),
                         ]
@@ -385,7 +389,7 @@ class TestGenerateEpub(unittest.TestCase):
                     get_chapter=lambda: Chapter(
                         elements=[
                             TextBlock(kind=TextKind.BODY, level=0, content=["An image:"]),
-                            Image(path=test_image_path, alt_text="Test image"),
+                            Image(path=test_image_path),
                         ]
                     ),
                 ),
@@ -477,10 +481,13 @@ class TestGenerateEpub(unittest.TestCase):
                                             ".",
                                         ],
                                     ),
-                                    Image(path=test_image_path, alt_text="Image"),
+                                    Image(path=test_image_path),
                                     Table(
-                                        html_content=(
-                                            "<table><tr><td>Cell</td></tr></table>"
+                                        html_content=HTMLTag(
+                                            name="table",
+                                            content=[
+                                                HTMLTag(name="tr", content=[HTMLTag(name="td", content=["Cell"])]),
+                                            ]
                                         )
                                     ),
                                 ],
