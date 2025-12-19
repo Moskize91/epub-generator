@@ -1,36 +1,57 @@
 from dataclasses import dataclass
-from typing import Any, Callable
+from typing import Any, Callable, Generator
 
 from ..types import EpubData, TocItem
 
 
 @dataclass
-class NavPoint:
-    toc_id: int
-    file_name: str
+class TocPoint:
+    title: str
     order: int
-    get_chapter: Callable[[], Any] | None = None
+    ref: "TocPointRef | None"
+    children: list["TocPoint"]
+
+    @property
+    def is_placeholder(self) -> bool:
+        """是否为占位节点（无对应文件）"""
+        return self.ref is None
+
+    @property
+    def has_file(self) -> bool:
+        """是否有对应的 XHTML 文件"""
+        return self.ref is not None
+
+@dataclass
+class TocPointRef:
+    part_id: str
+    file_name: str
+    get_chapter: Callable[[], Any]
 
 
-def gen_toc(
-    epub_data: EpubData,
-    has_cover: bool = False,
-) -> list[NavPoint]:
+def iter_toc(toc_points: list[TocPoint]) -> Generator[TocPointRef, None, None]:
+    for toc_point in toc_points:
+        if toc_point.ref:
+            yield toc_point.ref
+        yield from iter_toc(toc_point.children)
+
+
+def gen_toc(epub_data: EpubData) -> list[TocPoint]:
     prefaces = epub_data.prefaces
     chapters = epub_data.chapters
 
-    nav_point_generation = _NavPointGenerator(
-        has_cover=has_cover,
+    toc_point_generation = _TocPointGenerator(
         chapters_count=(
             _count_toc_items(prefaces) +
             _count_toc_items(chapters)
         ),
     )
+    toc_points: list[TocPoint] = []
     for chapters_list in (prefaces, chapters):
         for toc_item in chapters_list:
-            nav_point_generation.generate(toc_item)
+            toc_point = toc_point_generation.generate(toc_item)
+            toc_points.append(toc_point)
 
-    return nav_point_generation.nav_points
+    return toc_points
 
 
 def _count_toc_items(items: list[TocItem]) -> int:
@@ -50,39 +71,35 @@ def _max_depth_toc_items(items: list[TocItem]) -> int:
     return max_depth
 
 
-class _NavPointGenerator:
-    def __init__(self, has_cover: bool, chapters_count: int):
-        self._nav_points: list[NavPoint] = []
-        self._next_order: int = 2 if has_cover else 1
+class _TocPointGenerator:
+    def __init__(self, chapters_count: int):
+        self._next_order: int = 0
         self._next_id: int = 1
         self._digits = len(str(chapters_count))
 
-    @property
-    def nav_points(self) -> list[NavPoint]:
-        return self._nav_points
+    def generate(self, toc_item: TocItem) -> TocPoint:
+        return self._create_toc_point(toc_item)
 
-    def generate(self, toc_item: TocItem) -> None:
-        self._create_nav_point(toc_item)
-
-    def _create_nav_point(self, toc_item: TocItem) -> NavPoint:
-        nav_point: NavPoint | None = None
+    def _create_toc_point(self, toc_item: TocItem) -> TocPoint:
+        ref: TocPointRef | None = None
         if toc_item.get_chapter is not None:
-            toc_id = self._next_id
+            part_id = self._next_id
             self._next_id += 1
-            part_id = str(toc_id).zfill(self._digits)
-            nav_point = NavPoint(
-                toc_id=toc_id,
+            part_id = str(part_id).zfill(self._digits)
+            ref = TocPointRef(
+                part_id=part_id,
                 file_name=f"part{part_id}.xhtml",
-                order=self._next_order,
                 get_chapter=toc_item.get_chapter,
             )
-            self._nav_points.append(nav_point)
-            self._next_order += 1
+        order = self._next_order # 确保 order 以中序遍历为顺序
+        self._next_order += 1
 
-        for child in toc_item.children:
-            child_nav_point = self._create_nav_point(child)
-            if nav_point is None:
-                nav_point = child_nav_point
-
-        assert nav_point is not None, "TocItem has no chapter and no valid children"
-        return nav_point
+        return TocPoint(
+            title=toc_item.title, 
+            order=order,
+            ref=ref, 
+            children=[
+                self._create_toc_point(child)
+                for child in toc_item.children
+            ],
+        )
