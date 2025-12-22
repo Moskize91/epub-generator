@@ -17,10 +17,13 @@ from .types import (
     TextKind,
     TocItem,
 )
+from .validate import InvalidUnicodeError
 
 __all__ = [
     # Main API function
     "generate_epub",
+    # Validation
+    "InvalidUnicodeError",
     # Options
     "TableRender",
     "LaTeXRender",
