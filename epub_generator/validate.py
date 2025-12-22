@@ -1,11 +1,3 @@
-"""Validation utilities for detecting invalid Unicode characters in EPUB data.
-
-This module provides functions to detect surrogate characters (U+D800 to U+DFFF)
-which are not valid in UTF-8 encoding and will cause encoding errors.
-"""
-
-from typing import Any
-
 from .types import (
     BasicAsset,
     Chapter,
@@ -121,7 +113,7 @@ def _check_string(value: str | None, field_path: str) -> None:
             )
 
 
-def _check_string_list(values: list[Any], field_path: str) -> None:
+def _check_string_list(values: list[str | Mark | Formula | HTMLTag], field_path: str) -> None:
     """Recursively check a list that may contain strings, marks, formulas, or HTML tags.
 
     Args:
@@ -213,8 +205,6 @@ def _check_footnote(footnote: Footnote, field_path: str) -> None:
     """
     for i, content_block in enumerate(footnote.contents):
         _check_content_block(content_block, f"{field_path}.contents[{i}]")
-
-
 
 
 def _check_toc_item(item: TocItem, field_path: str) -> None:
