@@ -10,6 +10,7 @@ from ..html_tag import search_content
 from ..i18n import I18N
 from ..options import LaTeXRender, TableRender
 from ..types import BasicAsset, Chapter, ContentBlock, EpubData, Formula, TextBlock
+from ..validate import validate_chapter, validate_epub_data
 from .gen_chapter import generate_chapter
 from .gen_nav import gen_nav
 from .gen_toc import TocPoint, gen_toc, iter_toc
@@ -23,6 +24,9 @@ def generate_epub(
     latex_render: LaTeXRender = LaTeXRender.MATHML,
     assert_not_aborted: Callable[[], None] = lambda: None,
 ) -> None:
+    # Validate epub_data for invalid Unicode characters before processing
+    validate_epub_data(epub_data)
+
     i18n = I18N(lan)
     template = Template()
     epub_file_path = Path(epub_file_path)
@@ -114,6 +118,8 @@ def _write_chapters_from_data(
 ):
     for file_name, get_chapter in _search_chapters(epub_data, toc_points):
         chapter = get_chapter()
+        # Validate chapter content for invalid Unicode characters
+        validate_chapter(chapter, context=f"Chapter '{file_name}'")
         data = generate_chapter(context, chapter, i18n)
         context.file.writestr(
             zinfo_or_arcname="OEBPS/Text/" + file_name,
