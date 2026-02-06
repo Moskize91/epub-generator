@@ -473,7 +473,9 @@ class TestValidateUnicode(unittest.TestCase):
         with self.assertRaises(InvalidUnicodeError) as cm:
             validate_chapter(chapter)
 
-        self.assertIn("Chapter.elements[0].content[1].latex_expression", str(cm.exception))
+        self.assertIn(
+            "Chapter.elements[0].content[1].latex_expression", str(cm.exception)
+        )
 
     def test_invalid_mixed_content_in_asset(self):
         """Test detection of surrogate in mixed content (string, Formula, HTMLTag) in asset caption."""

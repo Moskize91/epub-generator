@@ -24,6 +24,7 @@ class EpubData:
     cover_image_path: Path | None = None
     """Cover image file path (optional, absolute path)"""
 
+
 @dataclass
 class BookMeta:
     """Book metadata information."""
@@ -57,9 +58,11 @@ class BookMeta:
 # Table of Contents structure
 # ============================================================================
 
+
 @dataclass
 class TocItem:
     """Table of contents item with title, content, and optional nested children."""
+
     title: str
     """Chapter title displayed in table of contents"""
 
@@ -69,6 +72,7 @@ class TocItem:
     children: "list[TocItem]" = field(default_factory=list)
     """Nested sub-chapters (recursive, optional)"""
 
+
 class TextKind(Enum):
     BODY = "body"
     """Regular paragraph."""
@@ -77,20 +81,28 @@ class TextKind(Enum):
     QUOTE = "quote"
     """Quoted text."""
 
+
 @dataclass
 class Mark:
     """Citation reference marker."""
+
     id: int
     """Citation ID, matches Footnote.id"""
+
 
 @dataclass
 class BasicAsset:
     """Asset as a base class for other assets."""
 
-    title: list["str | Mark | Formula | HTMLTag"] = field(default_factory=list, kw_only=True)
+    title: list["str | Mark | Formula | HTMLTag"] = field(
+        default_factory=list, kw_only=True
+    )
     """Asset title (before content)"""
-    caption: list["str | Mark | Formula | HTMLTag"] = field(default_factory=list, kw_only=True)
+    caption: list["str | Mark | Formula | HTMLTag"] = field(
+        default_factory=list, kw_only=True
+    )
     """Asset caption (after content)"""
+
 
 @dataclass
 class Table(BasicAsset):
@@ -115,6 +127,7 @@ class Image(BasicAsset):
     path: Path
     """Absolute path to the image file"""
 
+
 @dataclass
 class TextBlock:
     """Text block representation."""
@@ -126,9 +139,11 @@ class TextBlock:
     content: list["str | Mark | Formula | HTMLTag"]
     """Text content with optional citation marks."""
 
+
 @dataclass
 class Footnote:
     """Footnote/citation section."""
+
     id: int
     """Footnote ID"""
 
@@ -142,16 +157,20 @@ class Footnote:
 ContentBlock = TextBlock | Table | Formula | Image
 """Union of all content blocks that appear in main chapter content."""
 
+
 @dataclass
 class Chapter:
     """Complete content of a single chapter."""
+
     elements: list[ContentBlock] = field(default_factory=list)
     """Main content blocks"""
 
     footnotes: list[Footnote] = field(default_factory=list)
     """Footnotes"""
 
+
 ChapterGetter = Callable[[], Chapter]
+
 
 @dataclass
 class HTMLTag:

@@ -8,11 +8,12 @@ _EPUB_NS = "http://www.idpf.org/2007/ops"
 def set_epub_type(element: Element, epub_type: str) -> None:
     element.set(f"{{{_EPUB_NS}}}type", epub_type)
 
+
 def serialize_element(element: Element) -> str:
     xml_string = tostring(element, encoding="unicode")
     for prefix, namespace_uri, keep_xmlns in (
         ("epub", _EPUB_NS, False),  # EPUB namespace: remove xmlns (declared at root)
-        ("m", MATHML_NS, True),     # MathML namespace: keep xmlns with clean prefix
+        ("m", MATHML_NS, True),  # MathML namespace: keep xmlns with clean prefix
     ):
         xml_string = xml_string.replace(f"{{{namespace_uri}}}", f"{prefix}:")
         pattern = r"xmlns:(ns\d+)=\"" + re.escape(namespace_uri) + r"\""
@@ -21,14 +22,17 @@ def serialize_element(element: Element) -> str:
         for ns_prefix in matches:
             if keep_xmlns:
                 xml_string = xml_string.replace(
-                    f" xmlns:{ns_prefix}=\"{namespace_uri}\"",
-                    f" xmlns:{prefix}=\"{namespace_uri}\""
+                    f' xmlns:{ns_prefix}="{namespace_uri}"',
+                    f' xmlns:{prefix}="{namespace_uri}"',
                 )
             else:
-                xml_string = xml_string.replace(f" xmlns:{ns_prefix}=\"{namespace_uri}\"", "")
+                xml_string = xml_string.replace(
+                    f' xmlns:{ns_prefix}="{namespace_uri}"', ""
+                )
             xml_string = xml_string.replace(f"{ns_prefix}:", f"{prefix}:")
 
     return xml_string
+
 
 def indent(elem: Element, level: int = 0) -> Element:
     indent_str = "  " * level

@@ -22,13 +22,15 @@ _MEDIA_TYPE_MAP = {
 
 def render_inline_formula(context: Context, formula: Formula) -> Element | None:
     return _render_formula(
-        context=context, 
-        formula=formula, 
+        context=context,
+        formula=formula,
         inline_mode=True,
     )
 
 
-def render_asset_block(context: Context, block: Table | Formula | Image) -> Element | None: 
+def render_asset_block(
+    context: Context, block: Table | Formula | Image
+) -> Element | None:
     element: Element | None = None
     if isinstance(block, Table):
         element = _render_table(context, block)
@@ -44,17 +46,17 @@ def _render_table(context: Context, table: Table) -> Element | None:
         return None
 
     return _wrap_asset_content(
-        context=context, 
-        asset=table, 
+        context=context,
+        asset=table,
         content_element=render_html_tag(context, table.html_content),
     )
 
 
 def _render_formula(
-        context: Context,
-        formula: Formula,
-        inline_mode: bool,
-    ) -> Element | None:
+    context: Context,
+    formula: Formula,
+    inline_mode: bool,
+) -> Element | None:
 
     if context.latex_render == LaTeXRender.CLIPPING:
         return None
@@ -88,7 +90,7 @@ def _render_formula(
 
     return _wrap_asset_content(
         context=context,
-        asset=formula, 
+        asset=formula,
         content_element=content_element,
         inline_mode=inline_mode,
     )
@@ -106,10 +108,11 @@ def _process_image(context: Context, image: Image) -> Element:
     img_element.set("alt", "")  # Empty alt text, use caption instead
 
     return _wrap_asset_content(
-        context=context, 
-        asset=image, 
+        context=context,
+        asset=image,
         content_element=img_element,
     )
+
 
 def _normalize_expression(expression: str) -> str:
     expression = expression.replace("\n", "")
@@ -159,7 +162,9 @@ def _latex_formula2svg(latex: str, font_size: int = 12):
         plt.rc("text", usetex=True)
         plt.rc("font", size=font_size)
         fig, ax = plt.subplots()
-        txt = ax.text(0.5, 0.5, f"${latex}$", ha="center", va="center", transform=ax.transAxes)
+        txt = ax.text(
+            0.5, 0.5, f"${latex}$", ha="center", va="center", transform=ax.transAxes
+        )
         ax.axis("off")
         fig.canvas.draw()
         bbox = txt.get_window_extent(cast(Any, fig.canvas).get_renderer())
@@ -174,7 +179,7 @@ def _latex_formula2svg(latex: str, font_size: int = 12):
         return output.getvalue()
     except Exception:
         return None
-    
+
 
 def _wrap_asset_content(
     context: Context,
@@ -182,7 +187,7 @@ def _wrap_asset_content(
     content_element: Element,
     inline_mode: bool = False,
 ) -> Element:
-    
+
     if inline_mode:
         wrapper = Element("span", attrib={"class": "formula-inline"})
     else:
