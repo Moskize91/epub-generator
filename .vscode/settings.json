@@ -22,17 +22,21 @@
     "python-envs.defaultEnvManager": "ms-python.python:conda",
     "python-envs.defaultPackageManager": "ms-python.python:conda",
     "python-envs.pythonProjects": [],
-    // Python linting configuration
-    "python.linting.enabled": true,
-    "python.linting.pylintEnabled": true,
-    "python.linting.lintOnSave": true,
-    "python.linting.pylintArgs": [
-        "--rcfile=${workspaceFolder}/.pylintrc"
-    ],
+    // Python linting configuration - 使用 ruff 替代 pylint
+    "python.linting.enabled": false,
+    "python.linting.pylintEnabled": false,
+    // Ruff configuration
+    "ruff.enable": true,
+    "ruff.lint.enable": true,
+    "ruff.format.enable": true,
+    "ruff.lint.run": "onSave",
+    "ruff.organizeImports": true,
     // Editor settings
     "[python]": {
-        "editor.formatOnSave": false,
+        "editor.formatOnSave": true,
+        "editor.defaultFormatter": "charliermarsh.ruff",
         "editor.codeActionsOnSave": {
+            "source.fixAll": "explicit",
             "source.organizeImports": "explicit"
         }
     }

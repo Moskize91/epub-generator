@@ -21,6 +21,7 @@ class TocPoint:
         """是否有对应的 XHTML 文件"""
         return self.ref is not None
 
+
 @dataclass
 class TocPointRef:
     part_id: str
@@ -40,10 +41,7 @@ def gen_toc(epub_data: EpubData) -> list[TocPoint]:
     chapters = epub_data.chapters
 
     toc_point_generation = _TocPointGenerator(
-        chapters_count=(
-            _count_toc_items(prefaces) +
-            _count_toc_items(chapters)
-        ),
+        chapters_count=(_count_toc_items(prefaces) + _count_toc_items(chapters)),
     )
     toc_points: list[TocPoint] = []
     for chapters_list in (prefaces, chapters):
@@ -91,15 +89,12 @@ class _TocPointGenerator:
                 file_name=f"part{part_id}.xhtml",
                 get_chapter=toc_item.get_chapter,
             )
-        order = self._next_order # 确保 order 以中序遍历为顺序
+        order = self._next_order  # 确保 order 以中序遍历为顺序
         self._next_order += 1
 
         return TocPoint(
-            title=toc_item.title, 
+            title=toc_item.title,
             order=order,
-            ref=ref, 
-            children=[
-                self._create_toc_point(child)
-                for child in toc_item.children
-            ],
+            ref=ref,
+            children=[self._create_toc_point(child) for child in toc_item.children],
         )

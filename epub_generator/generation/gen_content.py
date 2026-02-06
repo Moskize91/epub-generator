@@ -6,9 +6,7 @@ from .xml_utils import set_epub_type
 
 
 def render_inline_content(
-    context: Context,
-    parent: Element,
-    content: list[str | Mark | Formula | HTMLTag]
+    context: Context, parent: Element, content: list[str | Mark | Formula | HTMLTag]
 ) -> None:
     current_element = parent
     for item in content:
@@ -31,6 +29,7 @@ def render_inline_content(
 
         elif isinstance(item, Formula):
             from .gen_asset import render_inline_formula  # avoid circular import
+
             formula_element = render_inline_formula(context, item)
             if formula_element is not None:
                 parent.append(formula_element)

@@ -113,7 +113,9 @@ def _check_string(value: str | None, field_path: str) -> None:
             )
 
 
-def _check_string_list(values: list[str | Mark | Formula | HTMLTag], field_path: str) -> None:
+def _check_string_list(
+    values: list[str | Mark | Formula | HTMLTag], field_path: str
+) -> None:
     """Recursively check a list that may contain strings, marks, formulas, or HTML tags.
 
     Args:

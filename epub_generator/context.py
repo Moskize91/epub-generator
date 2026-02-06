@@ -18,6 +18,7 @@ class _AssetNode:
     media_type: str
     content_hash: str
 
+
 class Context:
     def __init__(
         self,
@@ -55,7 +56,7 @@ class Context:
         nodes = list(self._hash_to_node.values())
         nodes.sort(key=lambda node: node.file_name)
         return [(node.file_name, node.media_type) for node in nodes]
-    
+
     @property
     def chapters_with_mathml(self) -> set[str]:
         return self._chapters_with_mathml
@@ -117,6 +118,7 @@ class Context:
         )
         return file_name
 
+
 class Template:
     def __init__(self):
         templates_path = cast(Path, files("epub_generator")) / "data"
@@ -133,6 +135,7 @@ class Template:
             template = self._env.get_template(name)
             self._templates[name] = template
         return template
+
 
 def _sha256_hash(data: bytes) -> str:
     hash256 = sha256()

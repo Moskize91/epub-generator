@@ -16,7 +16,7 @@ from .gen_asset import render_asset_block
 from .gen_content import render_inline_content
 from .xml_utils import serialize_element, set_epub_type
 
-_MAX_HEADING_LEVEL = 6 # HTML standard defines heading levels from h1 to h6
+_MAX_HEADING_LEVEL = 6  # HTML standard defines heading levels from h1 to h6
 
 
 def generate_chapter(
@@ -28,14 +28,13 @@ def generate_chapter(
         template="part.xhtml",
         i18n=i18n,
         content=[
-            serialize_element(child)
-            for child in _render_contents(context, chapter)
+            serialize_element(child) for child in _render_contents(context, chapter)
         ],
         citations=[
-            serialize_element(child)
-            for child in _render_footnotes(context, chapter)
+            serialize_element(child) for child in _render_footnotes(context, chapter)
         ],
     )
+
 
 def _render_contents(
     context: Context,
@@ -45,6 +44,7 @@ def _render_contents(
         layout = _render_content_block(context, block)
         if layout is not None:
             yield layout
+
 
 def _render_footnotes(
     context: Context,
@@ -115,6 +115,6 @@ def _render_content_block(context: Context, block: ContentBlock) -> Element | No
             return blockquote
 
         return container
-    
+
     else:
         return None

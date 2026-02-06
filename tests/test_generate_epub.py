@@ -46,10 +46,10 @@ class TestGenerateEpub(unittest.TestCase):
 
         # Minimal 1x1 PNG data
         png_data = (
-            b'\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01'
-            b'\x00\x00\x00\x01\x08\x06\x00\x00\x00\x1f\x15\xc4\x89'
-            b'\x00\x00\x00\nIDATx\x9cc\x00\x01\x00\x00\x05\x00\x01'
-            b'\r\n-\xb4\x00\x00\x00\x00IEND\xaeB`\x82'
+            b"\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01"
+            b"\x00\x00\x00\x01\x08\x06\x00\x00\x00\x1f\x15\xc4\x89"
+            b"\x00\x00\x00\nIDATx\x9cc\x00\x01\x00\x00\x05\x00\x01"
+            b"\r\n-\xb4\x00\x00\x00\x00IEND\xaeB`\x82"
         )
 
         # Create cover image
@@ -135,7 +135,9 @@ class TestGenerateEpub(unittest.TestCase):
                     title="Chapter 1",
                     get_chapter=lambda: Chapter(
                         elements=[
-                            TextBlock(kind=TextKind.BODY, level=0, content=["Test content"]),
+                            TextBlock(
+                                kind=TextKind.BODY, level=0, content=["Test content"]
+                            ),
                         ]
                     ),
                 ),
@@ -161,7 +163,11 @@ class TestGenerateEpub(unittest.TestCase):
                             title="Chapter 1.1",
                             get_chapter=lambda: Chapter(
                                 elements=[
-                                    TextBlock(kind=TextKind.BODY, level=0, content=["Content 1.1"]),
+                                    TextBlock(
+                                        kind=TextKind.BODY,
+                                        level=0,
+                                        content=["Content 1.1"],
+                                    ),
                                 ]
                             ),
                         ),
@@ -169,7 +175,11 @@ class TestGenerateEpub(unittest.TestCase):
                             title="Chapter 1.2",
                             get_chapter=lambda: Chapter(
                                 elements=[
-                                    TextBlock(kind=TextKind.BODY, level=0, content=["Content 1.2"]),
+                                    TextBlock(
+                                        kind=TextKind.BODY,
+                                        level=0,
+                                        content=["Content 1.2"],
+                                    ),
                                 ]
                             ),
                         ),
@@ -242,8 +252,14 @@ class TestGenerateEpub(unittest.TestCase):
                     title="Preface",
                     get_chapter=lambda: Chapter(
                         elements=[
-                            TextBlock(kind=TextKind.HEADLINE, level=0, content=["Preface"]),
-                            TextBlock(kind=TextKind.BODY, level=0, content=["Preface content."]),
+                            TextBlock(
+                                kind=TextKind.HEADLINE, level=0, content=["Preface"]
+                            ),
+                            TextBlock(
+                                kind=TextKind.BODY,
+                                level=0,
+                                content=["Preface content."],
+                            ),
                         ]
                     ),
                 ),
@@ -253,7 +269,11 @@ class TestGenerateEpub(unittest.TestCase):
                     title="Chapter 1",
                     get_chapter=lambda: Chapter(
                         elements=[
-                            TextBlock(kind=TextKind.BODY, level=0, content=["Chapter 1 content."]),
+                            TextBlock(
+                                kind=TextKind.BODY,
+                                level=0,
+                                content=["Chapter 1 content."],
+                            ),
                         ]
                     ),
                 ),
@@ -276,14 +296,26 @@ class TestGenerateEpub(unittest.TestCase):
                     title="Chapter 1",
                     get_chapter=lambda: Chapter(
                         elements=[
-                            TextBlock(kind=TextKind.BODY, level=0, content=["A table:"]),
+                            TextBlock(
+                                kind=TextKind.BODY, level=0, content=["A table:"]
+                            ),
                             Table(
                                 html_content=HTMLTag(
                                     name="table",
                                     content=[
-                                        HTMLTag(name="tr", content=[HTMLTag(name="th", content=["Header"])]),
-                                        HTMLTag(name="tr", content=[HTMLTag(name="td", content=["Data"])]),
-                                    ]
+                                        HTMLTag(
+                                            name="tr",
+                                            content=[
+                                                HTMLTag(name="th", content=["Header"])
+                                            ],
+                                        ),
+                                        HTMLTag(
+                                            name="tr",
+                                            content=[
+                                                HTMLTag(name="td", content=["Data"])
+                                            ],
+                                        ),
+                                    ],
                                 )
                             ),
                         ]
@@ -308,7 +340,9 @@ class TestGenerateEpub(unittest.TestCase):
                     title="Chapter 1",
                     get_chapter=lambda: Chapter(
                         elements=[
-                            TextBlock(kind=TextKind.BODY, level=0, content=["A formula:"]),
+                            TextBlock(
+                                kind=TextKind.BODY, level=0, content=["A formula:"]
+                            ),
                             Formula(latex_expression="x^2 + y^2 = z^2"),
                         ]
                     ),
@@ -388,7 +422,9 @@ class TestGenerateEpub(unittest.TestCase):
                     title="Chapter 1",
                     get_chapter=lambda: Chapter(
                         elements=[
-                            TextBlock(kind=TextKind.BODY, level=0, content=["An image:"]),
+                            TextBlock(
+                                kind=TextKind.BODY, level=0, content=["An image:"]
+                            ),
                             Image(path=test_image_path),
                         ]
                     ),
@@ -423,7 +459,9 @@ class TestGenerateEpub(unittest.TestCase):
                     title="Chapter 1",
                     get_chapter=lambda: Chapter(
                         elements=[
-                            TextBlock(kind=TextKind.BODY, level=0, content=["Content."]),
+                            TextBlock(
+                                kind=TextKind.BODY, level=0, content=["Content."]
+                            ),
                         ]
                     ),
                 ),
@@ -448,7 +486,11 @@ class TestGenerateEpub(unittest.TestCase):
                     title="Chapter 1",
                     get_chapter=lambda: Chapter(
                         elements=[
-                            TextBlock(kind=TextKind.BODY, level=0, content=["An image with formula in caption:"]),
+                            TextBlock(
+                                kind=TextKind.BODY,
+                                level=0,
+                                content=["An image with formula in caption:"],
+                            ),
                             Image(
                                 path=test_image_path,
                                 caption=[
@@ -479,9 +521,14 @@ class TestGenerateEpub(unittest.TestCase):
                                 html_content=HTMLTag(
                                     name="table",
                                     content=[
-                                        HTMLTag(name="tr", content=[HTMLTag(name="td", content=["Value"])]),
-                                    ]
-                                )
+                                        HTMLTag(
+                                            name="tr",
+                                            content=[
+                                                HTMLTag(name="td", content=["Value"])
+                                            ],
+                                        ),
+                                    ],
+                                ),
                             ),
                         ],
                         footnotes=[
@@ -526,8 +573,12 @@ class TestGenerateEpub(unittest.TestCase):
                     title="Preface",
                     get_chapter=lambda: Chapter(
                         elements=[
-                            TextBlock(kind=TextKind.HEADLINE, level=0, content=["Preface"]),
-                            TextBlock(kind=TextKind.BODY, level=0, content=["Preface text."]),
+                            TextBlock(
+                                kind=TextKind.HEADLINE, level=0, content=["Preface"]
+                            ),
+                            TextBlock(
+                                kind=TextKind.BODY, level=0, content=["Preface text."]
+                            ),
                         ]
                     ),
                 ),
@@ -559,8 +610,15 @@ class TestGenerateEpub(unittest.TestCase):
                                         html_content=HTMLTag(
                                             name="table",
                                             content=[
-                                                HTMLTag(name="tr", content=[HTMLTag(name="td", content=["Cell"])]),
-                                            ]
+                                                HTMLTag(
+                                                    name="tr",
+                                                    content=[
+                                                        HTMLTag(
+                                                            name="td", content=["Cell"]
+                                                        )
+                                                    ],
+                                                ),
+                                            ],
                                         )
                                     ),
                                 ],
