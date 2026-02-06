@@ -6,14 +6,14 @@ from uuid import uuid4
 from zipfile import ZipFile
 
 from ..context import Context, Template
-from ..html_tag import search_content
 from ..i18n import I18N
 from ..options import LaTeXRender, TableRender
-from ..types import BasicAsset, Chapter, ContentBlock, EpubData, Formula, TextBlock
+from ..types import EpubData
 from ..validate import validate_chapter, validate_epub_data
 from .gen_chapter import generate_chapter
 from .gen_nav import gen_nav
 from .gen_toc import TocPoint, gen_toc, iter_toc
+from .xml_utils import MATHML_NS
 
 
 def generate_epub(
@@ -125,7 +125,7 @@ def _write_chapters_from_data(
             zinfo_or_arcname="OEBPS/Text/" + file_name,
             data=data.encode("utf-8"),
         )
-        if latex_render == LaTeXRender.MATHML and _chapter_has_formula(chapter):
+        if latex_render == LaTeXRender.MATHML and MATHML_NS in data:
             context.mark_chapter_has_mathml(file_name)
         assert_not_aborted()
 
@@ -135,34 +135,6 @@ def _search_chapters(epub_data: EpubData, toc_points: list[TocPoint]):
         yield "head.xhtml", epub_data.get_head
     for ref in iter_toc(toc_points):
         yield ref.file_name, ref.get_chapter
-
-
-def _chapter_has_formula(chapter: Chapter) -> bool:
-    for element in chapter.elements:
-        if _content_block_has_formula(element):
-            return True
-    for footnote in chapter.footnotes:
-        for content_block in footnote.contents:
-            if _content_block_has_formula(content_block):
-                return True
-    return False
-
-
-def _content_block_has_formula(content_block: ContentBlock) -> bool:
-    if isinstance(content_block, Formula):
-        return True
-    if isinstance(content_block, TextBlock):
-        for item in search_content(content_block.content):
-            if isinstance(item, Formula):
-                return True
-    if isinstance(content_block, BasicAsset):
-        for item in search_content(content_block.title):
-            if isinstance(item, Formula):
-                return True
-        for item in search_content(content_block.caption):
-            if isinstance(item, Formula):
-                return True
-    return False
 
 
 def _write_basic_files(

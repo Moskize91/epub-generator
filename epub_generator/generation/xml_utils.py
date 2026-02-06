@@ -1,8 +1,8 @@
 import re
 from xml.etree.ElementTree import Element, tostring
 
+MATHML_NS = "http://www.w3.org/1998/Math/MathML"
 _EPUB_NS = "http://www.idpf.org/2007/ops"
-_MATHML_NS = "http://www.w3.org/1998/Math/MathML"
 
 
 def set_epub_type(element: Element, epub_type: str) -> None:
@@ -12,7 +12,7 @@ def serialize_element(element: Element) -> str:
     xml_string = tostring(element, encoding="unicode")
     for prefix, namespace_uri, keep_xmlns in (
         ("epub", _EPUB_NS, False),  # EPUB namespace: remove xmlns (declared at root)
-        ("m", _MATHML_NS, True),     # MathML namespace: keep xmlns with clean prefix
+        ("m", MATHML_NS, True),     # MathML namespace: keep xmlns with clean prefix
     ):
         xml_string = xml_string.replace(f"{{{namespace_uri}}}", f"{prefix}:")
         pattern = r"xmlns:(ns\d+)=\"" + re.escape(namespace_uri) + r"\""
